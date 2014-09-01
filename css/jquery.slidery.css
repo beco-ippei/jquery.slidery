@@ -1,0 +1,43 @@
+/*
+ * css for slider
+ */
+
+.slider-wrapper { margin: 0 auto; width: 99%; /*height: auto;*/ }
+.slider-wrapper .hidden { display: none; }
+
+.main-pane { position: relative; display: -webkit-box; }
+
+.main-pane .arrow {
+  width: 40px; height: 60px; margin-top: 150px; text-align: center;
+  background-color: #fff; opacity: 0.3;
+}
+.main-pane .arrow.left { margin-right: -40px; -webkit-box-ordinal-group: 1; }
+.main-pane .arrow.right { margin-left: -40px; -webkit-box-ordinal-group: 3; }
+.main-pane .arrow img { margin: 15px auto; width: 25px; height: 30px; }/*opacity: 0.8; }*/
+
+.slider { margin: 0; position: relative; overflow: hidden; -webkit-box-ordinal-group: 2; }
+.slider ul {
+  top: 0; left: 0; position: absolute; overflow: hidden;
+  margin: 0; padding: 0; padding-start: 0; display: -webkit-box;
+}
+.slider ul li { margin: 0; list-style: none; text-align: center; }
+.slider ul li img { max-width: 100%; overflow: hidden; }
+
+.slider .thumb { display: none; }
+.thumb-pane { margin-top:10px; display: -webkit-box; overflow: hidden; }
+.thumb-pane ul { margin: 0; padding: 0; display: -webkit-box;
+  position: absolute; left: 0; }
+.thumb-pane ul li { padding: 5px 2px; /*display: inline-block;*/ text-align: center;
+  list-style: none; }
+
+.thumb-list { position: relative; overflow: hidden; z-index: 999; }
+.thumb-pane .arrow { margin: 5px 0; text-align: center; z-index: 1001; }
+.thumb-pane .arrow img { width: 25px; height: 30px; }
+
+.thumb-pane ul li img {
+  width: auto; /*max-width: 81px; max-height: 81px;*/ /*TODO should adjust script*/
+  -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box;
+}
+
+.thumb-pane ul li.active img { border: solid 3px #e4007f; }
+
