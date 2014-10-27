@@ -65,10 +65,10 @@ jQuery.fn.slidery = function(opts) {
     });
 
     // li-item copy to before-first / after-last, for loop slider
+    var $slider_first_child = $slider.find('ul li:first-child').clone(true);
     $slider.find('ul li:first-child')
       .before($slider.find('ul li:last-child').clone(true));
-    $slider.find('ul li:last-child')
-      .after($slider.find('ul li:nth-child(2)').clone(true));
+    $slider.find('ul li:last-child').after($slider_first_child);
 
     var $sFmain_ul = $slider.children('ul');
     var $sFmain_li = $sFmain_ul.children('li');
