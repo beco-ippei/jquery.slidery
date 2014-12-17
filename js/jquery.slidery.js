@@ -33,7 +33,7 @@ jQuery.fn.slidery = function(opts) {
   var $ = jQuery;
   //TODO: should optionalize selector name and slider parameters
 
-  if (void 0 == opts) {
+  if (void 0 === opts) {
     opts = {};
   }
   var duration = opts.duration || 300;
@@ -91,14 +91,14 @@ jQuery.fn.slidery = function(opts) {
       // slide to current item
       $sFmain_ul.css({left: -listWidth*currentIndex});
 
-      if (void 0 == _height) {
+      if (void 0 === _height) {
         adjustHeight();     // adjust height with each li-height
       }
-    }
+    };
 
     var adjustHeight = function() {
       var highest = 0;
-      $sFmain_li.each(function(idx) {
+      $sFmain_li.each(function(_) {
         var height = 0;
         $(this).children().each(function(i) {
           height += $(this).height();
@@ -109,7 +109,7 @@ jQuery.fn.slidery = function(opts) {
       $sFmain_li.css({height: highest});
       $slider.css({height: highest, margin: 0});
       //$thumb.removeClass('hidden');
-    }
+    };
 
     var listCount = $sFmain_ul.children('li').length;
     var leftStart = 0;
@@ -133,7 +133,7 @@ jQuery.fn.slidery = function(opts) {
 
     $(window).bind("resize", function() {
       var _baseWidth = Math.round($mainPane.width());
-      if (_baseWidth == baseWidth) {
+      if (_baseWidth === baseWidth) {
         return;
       }
       baseWidth = _baseWidth;
@@ -146,29 +146,29 @@ jQuery.fn.slidery = function(opts) {
     });
 
 
-    //TODO PCブラウザは mouseup で<a>タグ反応してしまうので要検討
-    // onclickに退避して、mousemove でイベントキャンセルを手動制御ならできるかも
+    //TODO on PC browser, "anchor" tag fired on mouseup-event.
+    // maybe fix? move to "onclick", cancel event at "mousemove"
 
     var _event = function(te, e) {
       return isTouch && te.changedTouches ? te.changedTouches[0] : e;
-    }
+    };
 
     var flickBorder = 15;     // flick distance border
-    //TODO デバイスのDisplayサイズ別でしきい値を変えたほうが良さそう
-    // devicePixelRatio も気になる
+    //TODO change "shikii-chi" with display size
+    // never mind "devicePixelRatio"
 
-    // slider for main-pane {{{
+    // slider for main-pane
     var isTouch = ('ontouchstart' in window);
     $sFmain_ul.bind({
       'touchstart mousedown': function(e) {
         // flick started list-item
         var index = $(e.target).attr('data-index');
-        if (void 0 == index) {
+        if (void 0 === index) {
           index = $(e.target).parents('.slider-item').attr('data-index');
         }
         this.startIndex = parseInt(index);
 
-        if (e.type == 'mousedown') {
+        if (e.type === 'mousedown') {
           e.preventDefault();
         }
 
@@ -219,7 +219,7 @@ jQuery.fn.slidery = function(opts) {
         }
         this.moving = true;
 
-        var distance = this.pageX - pointX;
+        //var distance = this.pageX - pointX;
         this.left = this.left - (this.pageX - pointX);
         this.pageX = pointX;
 
@@ -236,7 +236,7 @@ jQuery.fn.slidery = function(opts) {
 
         this.moving = false;
       },
-      'touchend mouseup mouseout': function(e) {
+      'touchend mouseup mouseout': function(_) {
         if (!this.touched) {
           return;
         }
@@ -254,7 +254,7 @@ jQuery.fn.slidery = function(opts) {
         }
       }
     });
-    // end of slider for main-pane }}}
+    // end of slider for main-pane
 
     var slideTo = function(index) {
       currentIndex = index;
@@ -265,21 +265,21 @@ jQuery.fn.slidery = function(opts) {
         callback = function() {
           // flick to right and slided to last-item
           $sFmain_ul.css({left: positionLast});
-        }
+        };
         currentIndex = listCount-2;
       } else if (leftPosition < positionLast) {
         callback = function() {
           // flick to left and slided to first-item
           $sFmain_ul.css({left: positionFirst});
-        }
+        };
         currentIndex = 1;
-      }
+      };
 
       $sFmain_ul.stop()
         .animate({left: leftPosition}, duration, easing, callback);
 
       syncTbumbnail(currentIndex);
-    }
+    };
 
     $arrowLeft.on("click", function() {
       slideTo(currentIndex-1);
@@ -290,6 +290,7 @@ jQuery.fn.slidery = function(opts) {
     });
 
 
+    var $currentThumb;
     var syncTbumbnail = function(idx) {
       $thumb_ul.children('li.active').removeClass('active');
       $currentThumb = $thumb_ul.children('li:nth-child('+idx+')');
@@ -306,10 +307,11 @@ jQuery.fn.slidery = function(opts) {
         $thumb_ul.animate({left: -(li_right-thumbViewWidth+5)});
         // 5 is border-width + li-margin
       }
-    }
+    };
 
     // make thumbnail navigator
     var $thumb  = $wrapper.find('.thumb-pane');
+    var $thumb_list, $thumb_al, $thumb_ar;
     if ($thumb) {
       $thumb.addClass('hidden');
 
@@ -333,10 +335,10 @@ jQuery.fn.slidery = function(opts) {
 
         thumbViewWidth = Math.floor(baseWidth*0.8);
         $thumb_list.css({height: thumbWrapperHeight, width: thumbViewWidth});
-      }
+      };
       adjustThumbWrapperSize();
 
-      $thumb_ul = $('<ul></ul>');
+      var $thumb_ul = $('<ul></ul>');
       $thumb_list.append($thumb_ul);
       $slider.find('li.slider-item img.thumb').each(function() {
         var $_li = $('<li></li>').append($(this).remove());
@@ -352,7 +354,7 @@ jQuery.fn.slidery = function(opts) {
 
       var moveThumbTo = function(direction) {
         // slide direction (slide to  left => add to left)
-        var vector = (direction == 'left' ? 1 : -1);
+        var vector = (direction === 'left' ? 1 : -1);
         var ulLeft = parseInt($thumb_ul.css('left')) || 0;
         var moveTo = ulLeft + (vector * thumbViewWidth/2);
 
@@ -363,7 +365,7 @@ jQuery.fn.slidery = function(opts) {
           moveTo = thumbLeftMax;
         }
         $thumb_ul.animate({left: moveTo}, duration, easing);
-      }
+      };
 
       $($thumb_al).click(function() {
         moveThumbTo('left');
@@ -379,7 +381,7 @@ jQuery.fn.slidery = function(opts) {
       var thumbLeftMax = -400;      // set initial temporary value
 
       var adjustThumbUlSize = function() {
-        //TODO サムネサイズが変わらないなら、リサイズ時にやる必要ない
+        //TODO if will not change thumbnail-size, don't need this.
         var total = 0;
         $thumb_li.each(function() {
           total += $(this).width();
@@ -390,7 +392,7 @@ jQuery.fn.slidery = function(opts) {
         $thumb_li.css({height: thumbSize});
 
         thumbLeftMax = -(totalWidth-thumbViewWidth);
-      }
+      };
 
       $(window).load(function() {
         $thumb.removeClass('hidden');
@@ -404,11 +406,11 @@ jQuery.fn.slidery = function(opts) {
       // start of thumbnail-slider {{{
       $thumb_ul.bind({
         'touchstart mousedown': function(e) {
-          if (e.type == 'mousedown') {
+          if (e.type === 'mousedown') {
             e.preventDefault();
           }
 
-          //TODO イベント発生元の親ULを探したらいいのでは？
+          //TODO should find by "parent ul-node" from .....
           var $thumbUlNot = $thumb.find('ul:not(:animated)');
           $thumbUlNot.each(function() {
             var _e = _event(event, e);
@@ -462,7 +464,7 @@ jQuery.fn.slidery = function(opts) {
             $(this).css({left: thumbLeftMax});
           }
         },
-        'touchend mouseup mouseout': function(e) {
+        'touchend mouseup mouseout': function(_) {
           if (!this.touched) {
             return;
           }
