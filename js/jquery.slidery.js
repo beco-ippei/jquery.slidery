@@ -81,7 +81,9 @@ jQuery.fn.slidery = function(opts) {
       _this.currentIndex = 1;      // slider start index
 
       var $wrapper = $(_this.target);
+      _this.$wrapper = $wrapper;
       var $mainPane = $wrapper.find(".main-pane");
+      _this.$mainPane = $mainPane;
       var $arrowLeft = $mainPane.find(".arrow.left");
       var $arrowRight = $mainPane.find(".arrow.right");
       var $slider = $wrapper.find('.slider');
@@ -122,27 +124,8 @@ jQuery.fn.slidery = function(opts) {
           _this.initialAdditionalHeight);
       _this.adjustSize(initialHeight);
 
-      $(window).bind('load', function() {
-        _this.adjustHeight();
-        $wrapper.find('.arrow.hidden').removeClass('hidden');
-      });
-
       $sFmain_li.find('img').bind('load', function() {
         _this.adjustHeight();
-      });
-
-      $(window).bind("resize", function() {
-        var _baseWidth = Math.round($mainPane.width());
-        if (_baseWidth === _this.baseWidth) {
-          return;
-        }
-        _this.baseWidth = _baseWidth;
-        // adjust main slider size
-        _this.adjustSize();
-
-        // adjust thumbnail size
-        adjustThumbWrapperSize();
-        adjustThumbUlSize();
       });
 
 
@@ -344,6 +327,12 @@ jQuery.fn.slidery = function(opts) {
         };
         adjustThumbWrapperSize();
 
+        $(window).bind("resize", function() {
+          // adjust thumbnail size
+          adjustThumbWrapperSize();
+          adjustThumbUlSize();
+        });
+
         var $thumb_ul = $('<ul></ul>');
         $thumb_list.append($thumb_ul);
         $slider.find('li.slider-item img.thumb').each(function() {
@@ -483,8 +472,27 @@ jQuery.fn.slidery = function(opts) {
       }
 
       slideTo(1);     // slide to first element
+
+      _this.initEvents();
     },
-    hoge: function() {
+
+    initEvents: function() {
+      var _this = this;
+
+      $(window).bind('load', function() {
+        _this.adjustHeight();
+        _this.$wrapper.find('.arrow.hidden').removeClass('hidden');
+      });
+
+      $(window).bind("resize", function() {
+        var _baseWidth = Math.round(_this.$mainPane.width());
+        if (_baseWidth === _this.baseWidth) {
+          return;
+        }
+        _this.baseWidth = _baseWidth;
+        // adjust main slider size
+        _this.adjustSize();
+      });
     }
   };
 
@@ -493,7 +501,6 @@ jQuery.fn.slidery = function(opts) {
     var slider = new Slidery(this, jQuery, opts);
 
     slider.init();
-
   });
 };
 
