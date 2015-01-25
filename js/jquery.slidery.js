@@ -89,9 +89,9 @@ jQuery.fn.slidery = function(opts) {
 
       var adjustHeight = function() {
         var highest = 0;
-        $sFmain_li.each(function(_) {
+        $sFmain_li.each(function() {
           var height = 0;
-          $(this).children().each(function(i) {
+          $(this).children().each(function() {
             height += $(this).height();
           });
           if (highest < height) { highest = height; }
@@ -110,9 +110,9 @@ jQuery.fn.slidery = function(opts) {
 
       // adjust initial size
       var initialHeight = baseWidth +
-        (_this.initialAdditionalHeight < 1
-          ? baseWidth*_this.initialAdditionalHeight
-          : _this.initialAdditionalHeight);
+        (_this.initialAdditionalHeight < 1 ?
+          baseWidth*_this.initialAdditionalHeight :
+          _this.initialAdditionalHeight);
       adjustSize(initialHeight);
 
       $(window).bind('load', function() {
@@ -229,7 +229,7 @@ jQuery.fn.slidery = function(opts) {
 
           this.moving = false;
         },
-        'touchend mouseup mouseout': function(_) {
+        'touchend mouseup mouseout': function() {
           if (!this.touched) {
             return;
           }
@@ -266,7 +266,7 @@ jQuery.fn.slidery = function(opts) {
             $sFmain_ul.css({left: positionFirst});
           };
           currentIndex = 1;
-        };
+        }
 
         $sFmain_ul.stop()
           .animate({left: leftPosition}, _this.duration, _this.easing, callback);
@@ -363,7 +363,7 @@ jQuery.fn.slidery = function(opts) {
           } else if (moveTo <= thumbLeftMax) {
             moveTo = thumbLeftMax;
           }
-          $thumb_ul.animate({left: moveTo}, _this.duration, easing);
+          $thumb_ul.animate({left: moveTo}, _this.duration, this.easing);
         };
 
         $($thumb_al).click(function() {
@@ -373,7 +373,7 @@ jQuery.fn.slidery = function(opts) {
           moveThumbTo('right');
         });
 
-        $thumb_li = $thumb_ul.children('li');
+        var $thumb_li = $thumb_ul.children('li');
         var thumbCount = $thumb_li.length;
         var thumbListMargin = 4;    // li { margin-right: 3px }
         //TODO should get from $thumb_li's 'horizontal-margin' or left+right ?
@@ -437,7 +437,7 @@ jQuery.fn.slidery = function(opts) {
               var moveX = Math.abs(this.xStart - pointX);
               var moveY = Math.abs(this.yStart - _e.pageY);
               var border = 10;     // flick distance border
-              //TODO デバイスのDisplayサイズ別でしきい値を変えたほうが良さそう
+              //TODO border-value should use divice-size
               if (moveX > border || moveY > border) {
                 if (moveX < moveY) {
                   this.touched = false;
@@ -463,11 +463,11 @@ jQuery.fn.slidery = function(opts) {
               $(this).css({left: thumbLeftMax});
             }
           },
-          'touchend mouseup mouseout': function(_) {
+          'touchend mouseup mouseout': function() {
             if (!this.touched) {
               return;
             }
-            //TODO PCマウスクリックの場合は <a>イベントがMouseUp後に発火?
+            //TODO should fix pc-anchor tag link action
             this.touched = false;
             // thumbnail slides only flick-distance
           }
