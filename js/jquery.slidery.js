@@ -36,15 +36,41 @@ jQuery.fn.slidery = function(opts) {
   };
 
   Slidery.prototype = {
+
+    adjustSize: function(_height) {
+      //TODO arrow-width should calc
+      //var arrowWidth = Math.round(baseWidth * arrowWidthRatio);
+      //$arrowLeft.css({width: arWidth}),
+      //$arrowRight.css({width: arWidth});
+
+      //TODO adjustWidth ??
+      listWidth = this.baseWidth;      // full-width
+      this.leftMax = -listWidth * (this.listCount - 1);
+      this.positionFirst = -listWidth;
+      this.positionLast = -listWidth * (this.listCount - 2);
+
+      this.$slider.css({width: listWidth, height: _height});
+      this.$sFmain_li.css({width: listWidth});
+
+      // slide to current item
+      this.$sFmain_ul.css({left: -listWidth*this.currentIndex});
+
+      if (void 0 === _height) {
+        adjustHeight();     // adjust height with each li-height
+      }
+    },
+
     init: function() {
       var _this = this;
-      var currentIndex = 1;      // slider start index
+      //var currentIndex = 1;      // slider start index
+      _this.currentIndex = 1;      // slider start index
 
       var $wrapper = $(_this.target);
       var $mainPane = $wrapper.find(".main-pane");
       var $arrowLeft = $mainPane.find(".arrow.left");
       var $arrowRight = $mainPane.find(".arrow.right");
       var $slider = $wrapper.find('.slider');
+      _this.$slider = $slider;
 
       // adjust box-layout order
       $mainPane.append($slider.remove())
@@ -62,30 +88,9 @@ jQuery.fn.slidery = function(opts) {
       $slider.find('ul li:last-child').after($slider_first_child);
 
       var $sFmain_ul = $slider.children('ul');
+      _this.$sFmain_ul = $sFmain_ul;
       var $sFmain_li = $sFmain_ul.children('li');
-
-      var adjustSize = function(_height) {
-        //TODO arrow-width should calc
-        //var arrowWidth = Math.round(baseWidth * arrowWidthRatio);
-        //$arrowLeft.css({width: arWidth}),
-        //$arrowRight.css({width: arWidth});
-
-        //TODO adjustWidth ??
-        listWidth = baseWidth;      // full-width
-        leftMax = -listWidth * (listCount - 1);
-        positionFirst = -listWidth;
-        positionLast = -listWidth * (listCount - 2);
-
-        $slider.css({width: listWidth, height: _height});
-        $sFmain_li.css({width: listWidth});
-
-        // slide to current item
-        $sFmain_ul.css({left: -listWidth*currentIndex});
-
-        if (void 0 === _height) {
-          adjustHeight();     // adjust height with each li-height
-        }
-      };
+      _this.$sFmain_li = $sFmain_li;
 
       var adjustHeight = function() {
         var highest = 0;
@@ -102,18 +107,20 @@ jQuery.fn.slidery = function(opts) {
         //$thumb.removeClass('hidden');
       };
 
-      var listCount = $sFmain_ul.children('li').length;
+      _this.listCount = $sFmain_ul.children('li').length;
       var leftStart = 0;
 
-      var baseWidth = Math.round($mainPane.width());
-      var listWidth, leftMax, positionFirst, positionLast;
+      _this.baseWidth = Math.round($mainPane.width());
+      _this.leftMax = null;
+      _this.positionFirst = null;
+      _this.positionLast = null;
 
       // adjust initial size
-      var initialHeight = baseWidth +
+      var initialHeight = _this.baseWidth +
         (_this.initialAdditionalHeight < 1 ?
-          baseWidth*_this.initialAdditionalHeight :
+          _this.baseWidth*_this.initialAdditionalHeight :
           _this.initialAdditionalHeight);
-      adjustSize(initialHeight);
+      _this.adjustSize(initialHeight);
 
       $(window).bind('load', function() {
         adjustHeight();
@@ -126,12 +133,12 @@ jQuery.fn.slidery = function(opts) {
 
       $(window).bind("resize", function() {
         var _baseWidth = Math.round($mainPane.width());
-        if (_baseWidth === baseWidth) {
+        if (_baseWidth === _this.baseWidth) {
           return;
         }
-        baseWidth = _baseWidth;
+        _this.baseWidth = _baseWidth;
         // adjust main slider size
-        adjustSize();
+        _this.adjustSize();
 
         // adjust thumbnail size
         adjustThumbWrapperSize();
@@ -218,8 +225,8 @@ jQuery.fn.slidery = function(opts) {
 
           if (this.left >= leftStart) {
             this.left = leftStart;
-          } else if (this.left <= leftMax) {
-            this.left = leftMax;
+          } else if (this.left <= _this.leftMax) {
+            this.left = _this.leftMax;
           }
           $(this).css({left: this.left});
 
@@ -250,36 +257,36 @@ jQuery.fn.slidery = function(opts) {
       // end of slider for main-pane
 
       var slideTo = function(index) {
-        currentIndex = index;
-        var leftPosition = -(baseWidth*currentIndex);
+        _this.currentIndex = index;
+        var leftPosition = -(_this.baseWidth*_this.currentIndex);
         var callback = null;
 
-        if (leftPosition > positionFirst) {
+        if (leftPosition > _this.positionFirst) {
           callback = function() {
             // flick to right and slided to last-item
-            $sFmain_ul.css({left: positionLast});
+            $sFmain_ul.css({left: _this.positionLast});
           };
-          currentIndex = listCount-2;
-        } else if (leftPosition < positionLast) {
+          _this.currentIndex = _this.listCount-2;
+        } else if (leftPosition < _this.positionLast) {
           callback = function() {
             // flick to left and slided to first-item
-            $sFmain_ul.css({left: positionFirst});
+            $sFmain_ul.css({left: _this.positionFirst});
           };
-          currentIndex = 1;
+          _this.currentIndex = 1;
         }
 
         $sFmain_ul.stop()
           .animate({left: leftPosition}, _this.duration, _this.easing, callback);
 
-        syncTbumbnail(currentIndex);
+        syncTbumbnail(_this.currentIndex);
       };
 
       $arrowLeft.on("click", function() {
-        slideTo(currentIndex-1);
+        slideTo(_this.currentIndex-1);
       });
 
       $arrowRight.on("click", function() {
-        slideTo(currentIndex+1);
+        slideTo(_this.currentIndex+1);
       });
 
 
@@ -323,16 +330,16 @@ jQuery.fn.slidery = function(opts) {
 
         var adjustThumbWrapperSize = function() {
           //TODO set max-width to ul-width
-          _this.$thumb.css({height: thumbWrapperHeight, width: baseWidth});
+          _this.$thumb.css({height: thumbWrapperHeight, width: _this.baseWidth});
 
           // fixed for device
-          var thumbArrowWidth = Math.floor(baseWidth*0.1);
+          var thumbArrowWidth = Math.floor(_this.baseWidth*0.1);
           //TODO should calc
           var thumbArrowCss = {height: 30, padding: '20px 0', width: thumbArrowWidth};
           $thumb_al.css(thumbArrowCss);
           $thumb_ar.css(thumbArrowCss);
 
-          thumbViewWidth = Math.floor(baseWidth*0.8);
+          thumbViewWidth = Math.floor(_this.baseWidth*0.8);
           $thumb_list.css({height: thumbWrapperHeight, width: thumbViewWidth});
         };
         adjustThumbWrapperSize();
