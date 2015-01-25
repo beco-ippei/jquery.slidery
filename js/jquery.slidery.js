@@ -56,8 +56,23 @@ jQuery.fn.slidery = function(opts) {
       this.$sFmain_ul.css({left: -listWidth*this.currentIndex});
 
       if (void 0 === _height) {
-        adjustHeight();     // adjust height with each li-height
+        this.adjustHeight();     // adjust height with each li-height
       }
+    },
+
+    adjustHeight: function() {
+      var highest = 0;
+      this.$sFmain_li.each(function() {
+        var height = 0;
+        $(this).children().each(function() {
+          height += $(this).height();
+        });
+        if (highest < height) { highest = height; }
+      });
+
+      this.$sFmain_li.css({height: highest});
+      this.$slider.css({height: highest, margin: 0});
+      //$thumb.removeClass('hidden');
     },
 
     init: function() {
@@ -92,21 +107,6 @@ jQuery.fn.slidery = function(opts) {
       var $sFmain_li = $sFmain_ul.children('li');
       _this.$sFmain_li = $sFmain_li;
 
-      var adjustHeight = function() {
-        var highest = 0;
-        $sFmain_li.each(function() {
-          var height = 0;
-          $(this).children().each(function() {
-            height += $(this).height();
-          });
-          if (highest < height) { highest = height; }
-        });
-
-        $sFmain_li.css({height: highest});
-        $slider.css({height: highest, margin: 0});
-        //$thumb.removeClass('hidden');
-      };
-
       _this.listCount = $sFmain_ul.children('li').length;
       var leftStart = 0;
 
@@ -123,12 +123,12 @@ jQuery.fn.slidery = function(opts) {
       _this.adjustSize(initialHeight);
 
       $(window).bind('load', function() {
-        adjustHeight();
+        _this.adjustHeight();
         $wrapper.find('.arrow.hidden').removeClass('hidden');
       });
 
       $sFmain_li.find('img').bind('load', function() {
-        adjustHeight();
+        _this.adjustHeight();
       });
 
       $(window).bind("resize", function() {
