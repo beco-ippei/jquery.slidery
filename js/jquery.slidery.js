@@ -75,6 +75,42 @@ jQuery.fn.slidery = function(opts) {
       //$thumb.removeClass('hidden');
     },
 
+    setStartIndex: function(e) {
+      // flick started list-item
+      var index = $(e.target).attr('data-index');
+      if (void 0 === index) {
+        index = $(e.target).parents('.slider-item').attr('data-index');
+      }
+      this.startIndex = parseInt(index);
+    },
+
+    isTouch: ('ontouchstart' in window),
+
+    _event: function(te, e) {
+      return this.isTouch && te.changedTouches ? te.changedTouches[0] : e;
+    },
+
+    startSliding: function(e) {
+      var _this = this;
+      if (e.type === 'mousedown') {
+        e.preventDefault();
+      }
+
+      var $setMainUlNot = _this.$slider.children('ul:not(:animated)');
+      $setMainUlNot.each(function() {
+        // slide started point-x
+        var _e = _this._event(event, e);
+        var pointX = _e.pageX;
+        _this.pageX = _this.xStart = _this.flagX = pointX;
+
+        _this.yStart = _e.pageY;
+        _this.left = _this.leftBegin = parseInt($(this).css('left'));
+
+        _this.slideStarted = false;
+        _this.touched = true;
+      });
+    },
+
     init: function() {
       var _this = this;
       //var currentIndex = 1;      // slider start index
@@ -109,7 +145,8 @@ jQuery.fn.slidery = function(opts) {
       var $sFmain_li = $sFmain_ul.children('li');
       _this.$sFmain_li = $sFmain_li;
 
-      _this.listCount = $sFmain_ul.children('li').length;
+      //_this.listCount = $sFmain_ul.children('li').length;
+      _this.listCount = _this.$sFmain_li.length;
       var leftStart = 0;
 
       _this.baseWidth = Math.round($mainPane.width());
@@ -144,33 +181,11 @@ jQuery.fn.slidery = function(opts) {
       var isTouch = ('ontouchstart' in window);
       $sFmain_ul.bind({
         'touchstart mousedown': function(e) {
-          // flick started list-item
-          var index = $(e.target).attr('data-index');
-          if (void 0 === index) {
-            index = $(e.target).parents('.slider-item').attr('data-index');
-          }
-          this.startIndex = parseInt(index);
-
-          if (e.type === 'mousedown') {
-            e.preventDefault();
-          }
-
-          var $setMainUlNot = $slider.children('ul:not(:animated)');
-          $setMainUlNot.each(function() {
-            // slide started point-x
-            var _e = _event(event, e);
-            var pointX = _e.pageX;
-            this.pageX = this.xStart = this.flagX = pointX;
-
-            this.yStart = _e.pageY;
-            this.left = this.leftBegin = parseInt($(this).css('left'));
-
-            this.slideStarted = false;
-            this.touched = true;
-          });
+          _this.setStartIndex(e);
+          _this.startSliding(e);
         },
         'touchmove mousemove': function(e) {
-          if (!this.touched) {
+          if (!_this.touched) {
             return;
           }
 
@@ -178,17 +193,17 @@ jQuery.fn.slidery = function(opts) {
           var pointX = _e.pageX;
 
           // cancel slide event if move-y more than move-x
-          if (!this.slideStarted) {
+          if (!_this.slideStarted) {
             // calculate move x-y
-            var moveX = Math.abs(this.xStart - pointX);
-            var moveY = Math.abs(this.yStart - _e.pageY);
+            var moveX = Math.abs(_this.xStart - pointX);
+            var moveY = Math.abs(_this.yStart - _e.pageY);
             if (moveX > flickBorder || moveY > flickBorder) {
               if (moveX < moveY) {
-                this.touched = false;
+                _this.touched = false;
                 return;
               } else {
                 // if slide started, don't need cancel horizontal slider
-                this.slideStarted = true;
+                _this.slideStarted = true;
               }
             } else {
               // don't move until move over 'border' for x or y.
@@ -197,43 +212,43 @@ jQuery.fn.slidery = function(opts) {
           }
           e.preventDefault();
 
-          if (this.moving) {
+          if (_this.moving) {
             return;
           }
-          this.moving = true;
+          _this.moving = true;
 
           //var distance = this.pageX - pointX;
-          this.left = this.left - (this.pageX - pointX);
-          this.pageX = pointX;
+          _this.left = _this.left - (_this.pageX - pointX);
+          _this.pageX = pointX;
 
-          if (this.left >= leftStart) {
-            this.left = leftStart;
+          if (_this.left >= leftStart) {
+            _this.left = leftStart;
           } else if (this.left <= _this.leftMax) {
-            this.left = _this.leftMax;
+            _this.left = _this.leftMax;
           }
-          $(this).css({left: this.left});
+          $(this).css({left: _this.left});
 
           //var prop = {'-webkit-transform': 'translate3d(-'+distance+'px,0,0)'};
           //console.log(prop);
           //$(this).css(prop);
 
-          this.moving = false;
+          _this.moving = false;
         },
         'touchend mouseup mouseout': function() {
-          if (!this.touched) {
+          if (!_this.touched) {
             return;
           }
-          this.touched = false;
+          _this.touched = false;
 
-          if (this.left < this.leftBegin) {
+          if (_this.left < _this.leftBegin) {
             // flick to left (want to show next image)
     //          slideTo(this.startIndex+1);
-            slideTo(this.startIndex+1, this.left);
+            slideTo(_this.startIndex+1, _this.left);
 
-          } else if (this.leftBegin < this.left) {
+          } else if (_this.leftBegin < _this.left) {
             // flick to right (want to show prev image)
     //          slideTo(this.startIndex-1);
-            slideTo(this.startIndex-1, this.left);
+            slideTo(_this.startIndex-1, _this.left);
           }
         }
       });
@@ -277,6 +292,7 @@ jQuery.fn.slidery = function(opts) {
       var syncTbumbnail = function(idx) {
         try {
           $thumb_ul.children('li.active').removeClass('active');
+          console.log('thumb selector -> li:nth-child('+idx+')');
           $currentThumb = $thumb_ul.children('li:nth-child('+idx+')');
           $currentThumb.addClass('active');
 
