@@ -30,7 +30,7 @@ Slidery.prototype = {
     //$arrowRight.css({width: arWidth});
 
     //TODO adjustWidth ??
-    listWidth = this.baseWidth;      // full-width
+    var listWidth = this.baseWidth;      // full-width
     this.leftMax = -listWidth * (this.listCount - 1);
     this.positionFirst = -listWidth;
     this.positionLast = -listWidth * (this.listCount - 2);
@@ -84,7 +84,7 @@ Slidery.prototype = {
 
     if ($panel.is(':animated')) {
       console.log('animation processing...');
-      return;       // アニメーション終わるまで次の処理しない
+      return;       // don't start until prev-animation finish
     }
 
     // slide started point-x
