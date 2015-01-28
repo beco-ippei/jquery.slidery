@@ -7,6 +7,491 @@
  *    - not slide-show
  */
 
+
+var Slidery = function(_target, $, opts) {
+  this.target = _target;
+
+  this.duration = opts.duration || 300;
+  this.easing = opts.easing || 'swing';
+  //var arrowWidthRatio = opts.arrowWidthRatio || '0.1';
+  //var arrowHeightRatio = opts.arrowHeightRatio || '0.4';
+
+  // temporary initial additional-height (until window.loaded)
+  this.initialAdditionalHeight = opts.initialAdditionalHeight || 0.5;
+
+  this.thumbSize = opts.thumbSize || 60;
+};
+
+Slidery.prototype = {
+  adjustSize: function(_height) {
+    //TODO arrow-width should calc
+    //var arrowWidth = Math.round(baseWidth * arrowWidthRatio);
+    //$arrowLeft.css({width: arWidth}),
+    //$arrowRight.css({width: arWidth});
+
+    //TODO adjustWidth ??
+    listWidth = this.baseWidth;      // full-width
+    this.leftMax = -listWidth * (this.listCount - 1);
+    this.positionFirst = -listWidth;
+    this.positionLast = -listWidth * (this.listCount - 2);
+
+    this.$slider.css({width: listWidth, height: _height});
+    this.$sFmain_li.css({width: listWidth});
+
+    // slide to current item
+    this.$sFmain_ul.css({left: -listWidth*this.currentIndex});
+
+    this.isTouch = ('ontouchstart' in window);
+
+    if (void 0 === _height) {
+      this.adjustHeight();     // adjust height with each li-height
+    }
+  },
+
+  adjustHeight: function() {
+    var highest = 0;
+    this.$sFmain_li.each(function() {
+      var height = 0;
+      $(this).children().each(function() {
+        height += $(this).height();
+      });
+      if (highest < height) { highest = height; }
+    });
+
+    this.$sFmain_li.css({height: highest});
+    this.$slider.css({height: highest, margin: 0});
+    //$thumb.removeClass('hidden');
+  },
+
+  setStartIndex: function(e) {
+    // flick started list-item
+    var index = $(e.target).attr('data-index');
+    if (void 0 === index) {
+      index = $(e.target).parents('.slider-item').attr('data-index');
+    }
+    this.startIndex = parseInt(index);
+  },
+
+  _event: function(te, e) {
+    return this.isTouch && te.changedTouches ? te.changedTouches[0] : e;
+  },
+
+  startSliding: function(e, $panel) {
+    var _this = this;
+    if (e.type === 'mousedown') {
+      e.preventDefault();
+    }
+
+    if ($panel.is(':animated')) {
+      console.log('animation processing...');
+      return;       // アニメーション終わるまで次の処理しない
+    }
+
+    // slide started point-x
+    var _e = _this._event(event, e);
+    var pointX = _e.pageX;
+    $panel.pageX = $panel.xStart = $panel.flagX = pointX;
+
+    $panel.yStart = _e.pageY;
+    $panel.left = _this.leftBegin = parseInt($panel.css('left'));
+
+    $panel.slideStarted = false;
+    $panel.touched = true;
+  },
+
+  initLayout: function() {
+    var _this = this;
+    //var currentIndex = 1;      // slider start index
+    _this.currentIndex = 1;      // slider start index
+
+    _this.$wrapper = $(_this.target);
+//    _this.$wrapper = $wrapper;
+    var $mainPane = _this.$wrapper.find(".main-pane");
+    _this.$mainPane = $mainPane;
+    _this.$arrowLeft = $mainPane.find(".arrow.left");
+    _this.$arrowRight = $mainPane.find(".arrow.right");
+    _this.$slider = _this.$wrapper.find('.slider');
+//    _this.$slider = $slider;
+
+    // adjust box-layout order
+    $mainPane.append(_this.$slider.remove())
+      .append(_this.$arrowLeft.remove()).append(_this.$arrowRight.remove());
+
+    // append index-attr
+    _this.$slider.find('ul li').each(function(idx) {
+      $(this).attr('data-index', idx+1).addClass('slider-item');
+    });
+
+    // li-item copy to before-first / after-last, for loop slider
+    var $slider_first_child = _this.$slider.find('ul li:first-child').clone(true);
+    _this.$slider.find('ul li:first-child')
+      .before(_this.$slider.find('ul li:last-child').clone(true));
+    _this.$slider.find('ul li:last-child').after($slider_first_child);
+
+    _this.$sFmain_ul = _this.$slider.children('ul');
+//    _this.$sFmain_ul = $sFmain_ul;
+    var $sFmain_li = _this.$sFmain_ul.children('li');
+    _this.$sFmain_li = $sFmain_li;
+
+    //_this.listCount = $sFmain_ul.children('li').length;
+    _this.listCount = _this.$sFmain_li.length;
+    _this.leftStart = 0;
+
+    _this.baseWidth = Math.round($mainPane.width());
+    _this.leftMax = null;
+    _this.positionFirst = null;
+    _this.positionLast = null;
+
+    // adjust initial size
+    var initialHeight = _this.baseWidth +
+      (_this.initialAdditionalHeight < 1 ?
+        _this.baseWidth*_this.initialAdditionalHeight :
+        _this.initialAdditionalHeight);
+    _this.adjustSize(initialHeight);
+
+    $sFmain_li.find('img').bind('load', function() {
+      _this.adjustHeight();
+    });
+  },
+
+  init: function() {
+    var _this = this;
+
+    //TODO on PC browser, "anchor" tag fired on mouseup-event.
+    // maybe fix? move to "onclick", cancel event at "mousemove"
+
+    var _event = function(te, e) {
+      return isTouch && te.changedTouches ? te.changedTouches[0] : e;
+    };
+
+    var flickBorder = 15;     // flick distance border
+    //TODO change "shikii-chi" with display size
+    // never mind "devicePixelRatio"
+
+    // slider for main-pane
+    var isTouch = ('ontouchstart' in window);
+    _this.$sFmain_ul.on({
+      'touchstart mousedown': function(e) {
+        _this.setStartIndex(e);
+        _this.startSliding(e, _this.$sFmain_ul);
+      },
+      'touchmove mousemove': function(e) {
+        if (!_this.$sFmain_ul.touched) {
+          return;
+        }
+
+        var _e = _event(event, e);
+        var pointX = _e.pageX;
+
+        // cancel slide event if move-y more than move-x
+        if (!_this.$sFmain_ul.slideStarted) {
+          // calculate move x-y
+          var moveX = Math.abs(_this.$sFmain_ul.xStart - pointX);
+          var moveY = Math.abs(_this.$sFmain_ul.yStart - _e.pageY);
+          if (moveX > flickBorder || moveY > flickBorder) {
+            if (moveX < moveY) {
+              _this.$sFmain_ul.touched = false;
+              return;
+            } else {
+              // if slide started, don't need cancel horizontal slider
+              _this.$sFmain_ul.slideStarted = true;
+            }
+          } else {
+            // don't move until move over 'border' for x or y.
+            return;
+          }
+        }
+        e.preventDefault();
+
+        if (_this.$sFmain_ul.moving) {
+          return;
+        }
+        _this.$sFmain_ul.moving = true;
+
+        //var distance = this.pageX - pointX;
+        _this.$sFmain_ul.left = _this.$sFmain_ul.left
+              - (_this.$sFmain_ul.pageX - pointX);
+        _this.$sFmain_ul.pageX = pointX;
+
+        if (_this.$sFmain_ul.left >= _this.leftStart) {
+          _this.$sFmain_ul.left = _this.leftStart;
+        } else if (_this.$sFmain_ul.left <= _this.$sFmain_ul.leftMax) {
+          _this.$sFmain_ul.left = _this.$sFmain_ul.leftMax;
+        }
+        _this.$sFmain_ul.css({left: _this.$sFmain_ul.left});
+
+        //var prop = {'-webkit-transform': 'translate3d(-'+distance+'px,0,0)'};
+        //console.log(prop);
+        //$(this).css(prop);
+
+        _this.$sFmain_ul.moving = false;
+      },
+      'touchend mouseup mouseout': function() {
+        if (!_this.$sFmain_ul.touched) {
+          return;
+        }
+        _this.$sFmain_ul.touched = false;
+
+        if (_this.$sFmain_ul.left < _this.leftBegin) {
+          // flick to left (want to show next image)
+  //          slideTo(this.startIndex+1);
+          slideTo(_this.startIndex+1, _this.$sFmain_ul.left);
+
+        } else if (_this.leftBegin < _this.$sFmain_ul.left) {
+          // flick to right (want to show prev image)
+  //          slideTo(this.startIndex-1);
+          slideTo(_this.startIndex-1, _this.$sFmain_ul.left);
+        }
+      }
+    });
+    // end of slider for main-pane
+
+    var slideTo = function(index) {
+      _this.currentIndex = index;
+      var leftPosition = -(_this.baseWidth*_this.currentIndex);
+      var callback = null;
+
+      if (leftPosition > _this.positionFirst) {
+        callback = function() {
+          // flick to right and slided to last-item
+          _this.$sFmain_ul.css({left: _this.positionLast});
+        };
+        _this.currentIndex = _this.listCount-2;
+      } else if (leftPosition < _this.positionLast) {
+        callback = function() {
+          // flick to left and slided to first-item
+          _this.$sFmain_ul.css({left: _this.positionFirst});
+        };
+        _this.currentIndex = 1;
+      }
+
+      _this.$sFmain_ul.stop()
+        .animate({left: leftPosition}, _this.duration, _this.easing, callback);
+
+      syncTbumbnail(_this.currentIndex);
+    };
+
+    _this.$arrowLeft.on("click", function() {
+      slideTo(_this.currentIndex-1);
+    });
+
+    _this.$arrowRight.on("click", function() {
+      slideTo(_this.currentIndex+1);
+    });
+
+
+    var $currentThumb;
+    var syncTbumbnail = function(idx) {
+      try {
+        $thumb_ul.children('li.active').removeClass('active');
+//console.log('thumb selector -> li:nth-child('+idx+')');
+        $currentThumb = $thumb_ul.children('li:nth-child('+idx+')');
+        $currentThumb.addClass('active');
+
+        var ul_start = Math.abs(parseInt($thumb_ul.css('left')));
+        var ul_end   = ul_start + thumbViewWidth;
+        var li_left  = $currentThumb.position().left;
+        var li_right = li_left + $currentThumb.width();
+
+        if (li_left < ul_start) {
+          $thumb_ul.animate({left: -li_left});
+        } else if (ul_end < li_right) {
+          $thumb_ul.animate({left: -(li_right-thumbViewWidth+5)});
+          // 5 is border-width + li-margin
+        }
+      } catch (ex) {
+        console.dir(ex);
+      }
+    };
+
+    // make thumbnail navigator
+    //var $thumb  = $wrapper.find('.thumb-pane');
+    _this.$thumb  = _this.$wrapper.find('.thumb-pane');
+    var $thumb_list, $thumb_al, $thumb_ar;
+//    console.dir('$thumb == ' +$thumb);        //debug
+    if (_this.$thumb) {
+      _this.$thumb.addClass('hidden');
+
+      $thumb_list = _this.$thumb.find('.thumb-list');
+      $thumb_al = _this.$thumb.find('.arrow.left');
+      $thumb_ar = _this.$thumb.find('.arrow.right');
+
+      var thumbViewWidth;
+      var thumbWrapperHeight = _this.thumbSize+10;
+
+      var adjustThumbWrapperSize = function() {
+        //TODO set max-width to ul-width
+        _this.$thumb.css({height: thumbWrapperHeight, width: _this.baseWidth});
+
+        // fixed for device
+        var thumbArrowWidth = Math.floor(_this.baseWidth*0.1);
+        //TODO should calc
+        var thumbArrowCss = {height: 30, padding: '20px 0', width: thumbArrowWidth};
+        $thumb_al.css(thumbArrowCss);
+        $thumb_ar.css(thumbArrowCss);
+
+        thumbViewWidth = Math.floor(_this.baseWidth*0.8);
+        $thumb_list.css({height: thumbWrapperHeight, width: thumbViewWidth});
+      };
+      adjustThumbWrapperSize();
+
+      $(window).bind("resize", function() {
+        // adjust thumbnail size
+        adjustThumbWrapperSize();
+        adjustThumbUlSize();
+      });
+
+      var $thumb_ul = $('<ul></ul>');
+      $thumb_list.append($thumb_ul);
+      _this.$slider.find('li.slider-item img.thumb').each(function() {
+        var $_li = $('<li></li>').append($(this).remove());
+        $thumb_ul.append($_li);
+      });
+
+      $thumb_ul.find('li img')
+        .css({'max-width': _this.thumbSize, 'max-height': _this.thumbSize});
+
+      // remove first & last li-child, if loop-slider
+      $thumb_ul.find('li:first-child').remove();
+      $thumb_ul.find('li:last-child').remove();
+
+      var moveThumbTo = function(direction) {
+        // slide direction (slide to  left => add to left)
+        var vector = (direction === 'left' ? 1 : -1);
+        var ulLeft = parseInt($thumb_ul.css('left')) || 0;
+        var moveTo = ulLeft + (vector * thumbViewWidth/2);
+
+        //TODO slide to first or last, if position is last or first
+        if (0 <= moveTo) {
+          moveTo = 0;
+        } else if (moveTo <= thumbLeftMax) {
+          moveTo = thumbLeftMax;
+        }
+        $thumb_ul.animate({left: moveTo}, _this.duration, this.easing);
+      };
+
+      $($thumb_al).click(function() {
+        moveThumbTo('left');
+      });
+      $($thumb_ar).click(function() {
+        moveThumbTo('right');
+      });
+
+      var $thumb_li = $thumb_ul.children('li');
+      var thumbCount = $thumb_li.length;
+      var thumbListMargin = 4;    // li { margin-right: 3px }
+      //TODO should get from $thumb_li's 'horizontal-margin' or left+right ?
+      var thumbLeftMax = -400;      // set initial temporary value
+
+      var adjustThumbUlSize = function() {
+        //TODO if will not change thumbnail-size, don't need this.
+        var total = 0;
+        $thumb_li.each(function() {
+          total += $(this).width();
+        });
+        var totalWidth = total + thumbListMargin*(thumbCount+1);
+
+        $thumb_ul.css({height: thumbWrapperHeight, width: totalWidth});
+        $thumb_li.css({height: _this.thumbSize});
+
+        thumbLeftMax = -(totalWidth-thumbViewWidth);
+      };
+
+      $(window).load(function() {
+        _this.$thumb.removeClass('hidden');
+        adjustThumbUlSize();
+      });
+
+      $thumb_li.click(function() {
+        slideTo($thumb_li.index(this)+1);
+      });
+
+      // start of thumbnail-slider
+      $thumb_ul.on({
+        'touchstart mousedown': function(e) {
+console.log('thumb - touchstart');
+          _this.startSliding(e, $thumb_ul);
+        },
+        'touchmove mousemove': function(e) {
+          if (!$thumb_ul.touched) {
+            return;
+          }
+
+          var _e = _event(event, e);
+          var pointX = _e.pageX;
+
+          // cancel slide event if move-y more than move-x
+          if (!$thumb_ul.slideStarted) {
+            // calculate move x-y
+            var moveX = Math.abs($thumb_ul.xStart - pointX);
+            var moveY = Math.abs($thumb_ul.yStart - _e.pageY);
+            var border = 10;     // flick distance border
+            //TODO border-value should use divice-size
+            if (moveX > border || moveY > border) {
+              if (moveX < moveY) {
+                $thumb_ul.touched = false;
+                return;
+              } else {
+                // if slide started, don't need cancel horizontal slider
+                $thumb_ul.slideStarted = true;
+              }
+            } else {
+              return;
+            }
+          }
+          e.preventDefault();
+
+          $thumb_ul.left = ($thumb_ul.left || 0) - ($thumb_ul.pageX - pointX);
+          $thumb_ul.pageX = pointX;
+
+          if ($thumb_ul.left < 0 && $thumb_ul.left > thumbLeftMax) {
+            $thumb_ul.css({left: $thumb_ul.left});
+          } else if ($thumb_ul.left >= 0) {
+            $thumb_ul.css({left: 0});
+          } else if ($thumb_ul.left <= thumbLeftMax) {
+            $thumb_ul.css({left: thumbLeftMax});
+          }
+        },
+        'touchend mouseup mouseout': function() {
+//console.log('thumb - touchend');
+          if (!$thumb_ul.touched) {
+            return;
+          }
+          //TODO should fix pc-anchor tag link action
+          $thumb_ul.touched = false;
+          // thumbnail slides only flick-distance
+        }
+      });
+    // end of thumbnail-slider
+    }
+
+    slideTo(1);     // slide to first element
+
+    _this.initEvents();
+  },
+
+  initEvents: function() {
+    var _this = this;
+
+    $(window).bind('load', function() {
+      _this.adjustHeight();
+      _this.$wrapper.find('.arrow.hidden').removeClass('hidden');
+    });
+
+    $(window).bind("resize", function() {
+      var _baseWidth = Math.round(_this.$mainPane.width());
+      if (_baseWidth === _this.baseWidth) {
+        return;
+      }
+      _this.baseWidth = _baseWidth;
+      // adjust main slider size
+      _this.adjustSize();
+    });
+  }
+};
+
+
+
 jQuery.fn.slidery = function(opts) {
 
   opts = opts || {};
@@ -21,501 +506,10 @@ jQuery.fn.slidery = function(opts) {
   opts.thumbSize = opts.thumbSize || 60;
 
 
-  var Slidery = function(_target, $, opts) {
-    this.target = _target;
-
-    this.duration = opts.duration || 300;
-    this.easing = opts.easing || 'swing';
-    //var arrowWidthRatio = opts.arrowWidthRatio || '0.1';
-    //var arrowHeightRatio = opts.arrowHeightRatio || '0.4';
-
-    // temporary initial additional-height (until window.loaded)
-    this.initialAdditionalHeight = opts.initialAdditionalHeight || 0.5;
-
-    this.thumbSize = opts.thumbSize || 60;
-  };
-
-  Slidery.prototype = {
-
-    adjustSize: function(_height) {
-      //TODO arrow-width should calc
-      //var arrowWidth = Math.round(baseWidth * arrowWidthRatio);
-      //$arrowLeft.css({width: arWidth}),
-      //$arrowRight.css({width: arWidth});
-
-      //TODO adjustWidth ??
-      listWidth = this.baseWidth;      // full-width
-      this.leftMax = -listWidth * (this.listCount - 1);
-      this.positionFirst = -listWidth;
-      this.positionLast = -listWidth * (this.listCount - 2);
-
-      this.$slider.css({width: listWidth, height: _height});
-      this.$sFmain_li.css({width: listWidth});
-
-      // slide to current item
-      this.$sFmain_ul.css({left: -listWidth*this.currentIndex});
-
-      if (void 0 === _height) {
-        this.adjustHeight();     // adjust height with each li-height
-      }
-    },
-
-    adjustHeight: function() {
-      var highest = 0;
-      this.$sFmain_li.each(function() {
-        var height = 0;
-        $(this).children().each(function() {
-          height += $(this).height();
-        });
-        if (highest < height) { highest = height; }
-      });
-
-      this.$sFmain_li.css({height: highest});
-      this.$slider.css({height: highest, margin: 0});
-      //$thumb.removeClass('hidden');
-    },
-
-    setStartIndex: function(e) {
-      // flick started list-item
-      var index = $(e.target).attr('data-index');
-      if (void 0 === index) {
-        index = $(e.target).parents('.slider-item').attr('data-index');
-      }
-      this.startIndex = parseInt(index);
-    },
-
-    isTouch: ('ontouchstart' in window),
-
-    _event: function(te, e) {
-      return this.isTouch && te.changedTouches ? te.changedTouches[0] : e;
-    },
-
-    startSliding: function(e) {
-      var _this = this;
-      if (e.type === 'mousedown') {
-        e.preventDefault();
-      }
-
-      var $setMainUlNot = _this.$slider.children('ul:not(:animated)');
-      $setMainUlNot.each(function() {
-        // slide started point-x
-        var _e = _this._event(event, e);
-        var pointX = _e.pageX;
-        _this.pageX = _this.xStart = _this.flagX = pointX;
-
-        _this.yStart = _e.pageY;
-        _this.left = _this.leftBegin = parseInt($(this).css('left'));
-
-        _this.slideStarted = false;
-        _this.touched = true;
-      });
-    },
-
-    init: function() {
-      var _this = this;
-      //var currentIndex = 1;      // slider start index
-      _this.currentIndex = 1;      // slider start index
-
-      var $wrapper = $(_this.target);
-      _this.$wrapper = $wrapper;
-      var $mainPane = $wrapper.find(".main-pane");
-      _this.$mainPane = $mainPane;
-      var $arrowLeft = $mainPane.find(".arrow.left");
-      var $arrowRight = $mainPane.find(".arrow.right");
-      var $slider = $wrapper.find('.slider');
-      _this.$slider = $slider;
-
-      // adjust box-layout order
-      $mainPane.append($slider.remove())
-        .append($arrowLeft.remove()).append($arrowRight.remove());
-
-      // append index-attr
-      $slider.find('ul li').each(function(idx) {
-        $(this).attr('data-index', idx+1).addClass('slider-item');
-      });
-
-      // li-item copy to before-first / after-last, for loop slider
-      var $slider_first_child = $slider.find('ul li:first-child').clone(true);
-      $slider.find('ul li:first-child')
-        .before($slider.find('ul li:last-child').clone(true));
-      $slider.find('ul li:last-child').after($slider_first_child);
-
-      var $sFmain_ul = $slider.children('ul');
-      _this.$sFmain_ul = $sFmain_ul;
-      var $sFmain_li = $sFmain_ul.children('li');
-      _this.$sFmain_li = $sFmain_li;
-
-      //_this.listCount = $sFmain_ul.children('li').length;
-      _this.listCount = _this.$sFmain_li.length;
-      var leftStart = 0;
-
-      _this.baseWidth = Math.round($mainPane.width());
-      _this.leftMax = null;
-      _this.positionFirst = null;
-      _this.positionLast = null;
-
-      // adjust initial size
-      var initialHeight = _this.baseWidth +
-        (_this.initialAdditionalHeight < 1 ?
-          _this.baseWidth*_this.initialAdditionalHeight :
-          _this.initialAdditionalHeight);
-      _this.adjustSize(initialHeight);
-
-      $sFmain_li.find('img').bind('load', function() {
-        _this.adjustHeight();
-      });
-
-
-      //TODO on PC browser, "anchor" tag fired on mouseup-event.
-      // maybe fix? move to "onclick", cancel event at "mousemove"
-
-      var _event = function(te, e) {
-        return isTouch && te.changedTouches ? te.changedTouches[0] : e;
-      };
-
-      var flickBorder = 15;     // flick distance border
-      //TODO change "shikii-chi" with display size
-      // never mind "devicePixelRatio"
-
-      // slider for main-pane
-      var isTouch = ('ontouchstart' in window);
-      $sFmain_ul.bind({
-        'touchstart mousedown': function(e) {
-          _this.setStartIndex(e);
-          _this.startSliding(e);
-        },
-        'touchmove mousemove': function(e) {
-          if (!_this.touched) {
-            return;
-          }
-
-          var _e = _event(event, e);
-          var pointX = _e.pageX;
-
-          // cancel slide event if move-y more than move-x
-          if (!_this.slideStarted) {
-            // calculate move x-y
-            var moveX = Math.abs(_this.xStart - pointX);
-            var moveY = Math.abs(_this.yStart - _e.pageY);
-            if (moveX > flickBorder || moveY > flickBorder) {
-              if (moveX < moveY) {
-                _this.touched = false;
-                return;
-              } else {
-                // if slide started, don't need cancel horizontal slider
-                _this.slideStarted = true;
-              }
-            } else {
-              // don't move until move over 'border' for x or y.
-              return;
-            }
-          }
-          e.preventDefault();
-
-          if (_this.moving) {
-            return;
-          }
-          _this.moving = true;
-
-          //var distance = this.pageX - pointX;
-          _this.left = _this.left - (_this.pageX - pointX);
-          _this.pageX = pointX;
-
-          if (_this.left >= leftStart) {
-            _this.left = leftStart;
-          } else if (this.left <= _this.leftMax) {
-            _this.left = _this.leftMax;
-          }
-          $(this).css({left: _this.left});
-
-          //var prop = {'-webkit-transform': 'translate3d(-'+distance+'px,0,0)'};
-          //console.log(prop);
-          //$(this).css(prop);
-
-          _this.moving = false;
-        },
-        'touchend mouseup mouseout': function() {
-          if (!_this.touched) {
-            return;
-          }
-          _this.touched = false;
-
-          if (_this.left < _this.leftBegin) {
-            // flick to left (want to show next image)
-    //          slideTo(this.startIndex+1);
-            slideTo(_this.startIndex+1, _this.left);
-
-          } else if (_this.leftBegin < _this.left) {
-            // flick to right (want to show prev image)
-    //          slideTo(this.startIndex-1);
-            slideTo(_this.startIndex-1, _this.left);
-          }
-        }
-      });
-      // end of slider for main-pane
-
-      var slideTo = function(index) {
-        _this.currentIndex = index;
-        var leftPosition = -(_this.baseWidth*_this.currentIndex);
-        var callback = null;
-
-        if (leftPosition > _this.positionFirst) {
-          callback = function() {
-            // flick to right and slided to last-item
-            $sFmain_ul.css({left: _this.positionLast});
-          };
-          _this.currentIndex = _this.listCount-2;
-        } else if (leftPosition < _this.positionLast) {
-          callback = function() {
-            // flick to left and slided to first-item
-            $sFmain_ul.css({left: _this.positionFirst});
-          };
-          _this.currentIndex = 1;
-        }
-
-        $sFmain_ul.stop()
-          .animate({left: leftPosition}, _this.duration, _this.easing, callback);
-
-        syncTbumbnail(_this.currentIndex);
-      };
-
-      $arrowLeft.on("click", function() {
-        slideTo(_this.currentIndex-1);
-      });
-
-      $arrowRight.on("click", function() {
-        slideTo(_this.currentIndex+1);
-      });
-
-
-      var $currentThumb;
-      var syncTbumbnail = function(idx) {
-        try {
-          $thumb_ul.children('li.active').removeClass('active');
-          console.log('thumb selector -> li:nth-child('+idx+')');
-          $currentThumb = $thumb_ul.children('li:nth-child('+idx+')');
-          $currentThumb.addClass('active');
-
-          var ul_start = Math.abs(parseInt($thumb_ul.css('left')));
-          var ul_end   = ul_start + thumbViewWidth;
-          var li_left  = $currentThumb.position().left;
-          var li_right = li_left + $currentThumb.width();
-
-          if (li_left < ul_start) {
-            $thumb_ul.animate({left: -li_left});
-          } else if (ul_end < li_right) {
-            $thumb_ul.animate({left: -(li_right-thumbViewWidth+5)});
-            // 5 is border-width + li-margin
-          }
-        } catch (ex) {
-          console.dir(ex);
-        }
-      };
-
-      // make thumbnail navigator
-      //var $thumb  = $wrapper.find('.thumb-pane');
-      _this.$thumb  = $wrapper.find('.thumb-pane');
-      var $thumb_list, $thumb_al, $thumb_ar;
-  //    console.dir('$thumb == ' +$thumb);        //debug
-      if (_this.$thumb) {
-        _this.$thumb.addClass('hidden');
-
-        $thumb_list = _this.$thumb.find('.thumb-list');
-        $thumb_al = _this.$thumb.find('.arrow.left');
-        $thumb_ar = _this.$thumb.find('.arrow.right');
-
-        var thumbViewWidth;
-        var thumbWrapperHeight = _this.thumbSize+10;
-
-        var adjustThumbWrapperSize = function() {
-          //TODO set max-width to ul-width
-          _this.$thumb.css({height: thumbWrapperHeight, width: _this.baseWidth});
-
-          // fixed for device
-          var thumbArrowWidth = Math.floor(_this.baseWidth*0.1);
-          //TODO should calc
-          var thumbArrowCss = {height: 30, padding: '20px 0', width: thumbArrowWidth};
-          $thumb_al.css(thumbArrowCss);
-          $thumb_ar.css(thumbArrowCss);
-
-          thumbViewWidth = Math.floor(_this.baseWidth*0.8);
-          $thumb_list.css({height: thumbWrapperHeight, width: thumbViewWidth});
-        };
-        adjustThumbWrapperSize();
-
-        $(window).bind("resize", function() {
-          // adjust thumbnail size
-          adjustThumbWrapperSize();
-          adjustThumbUlSize();
-        });
-
-        var $thumb_ul = $('<ul></ul>');
-        $thumb_list.append($thumb_ul);
-        $slider.find('li.slider-item img.thumb').each(function() {
-          var $_li = $('<li></li>').append($(this).remove());
-          $thumb_ul.append($_li);
-        });
-
-        $thumb_ul.find('li img')
-          .css({'max-width': _this.thumbSize, 'max-height': _this.thumbSize});
-
-        // remove first & last li-child, if loop-slider
-        $thumb_ul.find('li:first-child').remove();
-        $thumb_ul.find('li:last-child').remove();
-
-        var moveThumbTo = function(direction) {
-          // slide direction (slide to  left => add to left)
-          var vector = (direction === 'left' ? 1 : -1);
-          var ulLeft = parseInt($thumb_ul.css('left')) || 0;
-          var moveTo = ulLeft + (vector * thumbViewWidth/2);
-
-          //TODO slide to first or last, if position is last or first
-          if (0 <= moveTo) {
-            moveTo = 0;
-          } else if (moveTo <= thumbLeftMax) {
-            moveTo = thumbLeftMax;
-          }
-          $thumb_ul.animate({left: moveTo}, _this.duration, this.easing);
-        };
-
-        $($thumb_al).click(function() {
-          moveThumbTo('left');
-        });
-        $($thumb_ar).click(function() {
-          moveThumbTo('right');
-        });
-
-        var $thumb_li = $thumb_ul.children('li');
-        var thumbCount = $thumb_li.length;
-        var thumbListMargin = 4;    // li { margin-right: 3px }
-        //TODO should get from $thumb_li's 'horizontal-margin' or left+right ?
-        var thumbLeftMax = -400;      // set initial temporary value
-
-        var adjustThumbUlSize = function() {
-          //TODO if will not change thumbnail-size, don't need this.
-          var total = 0;
-          $thumb_li.each(function() {
-            total += $(this).width();
-          });
-          var totalWidth = total + thumbListMargin*(thumbCount+1);
-
-          $thumb_ul.css({height: thumbWrapperHeight, width: totalWidth});
-          $thumb_li.css({height: _this.thumbSize});
-
-          thumbLeftMax = -(totalWidth-thumbViewWidth);
-        };
-
-        $(window).load(function() {
-          _this.$thumb.removeClass('hidden');
-          adjustThumbUlSize();
-        });
-
-        $thumb_li.click(function() {
-          slideTo($thumb_li.index(this)+1);
-        });
-
-        // start of thumbnail-slider
-        $thumb_ul.bind({
-          'touchstart mousedown': function(e) {
-            if (e.type === 'mousedown') {
-              e.preventDefault();
-            }
-
-            //TODO should find by "parent ul-node" from .....
-            var $thumbUlNot = _this.$thumb.find('ul:not(:animated)');
-            $thumbUlNot.each(function() {
-              var _e = _event(event, e);
-              var pointX = _e.pageX;    // slide started point-x
-              this.pageX = this.xStart = this.flagX = pointX;
-              this.yStart = _e.pageY;
-
-              this.left = this.leftBegin = parseInt($(this).css('left'));
-
-              this.slideStarted = false;
-              this.touched = true;
-            });
-          },
-          'touchmove mousemove': function(e) {
-            if (!this.touched) {
-              return;
-            }
-
-            var _e = _event(event, e);
-            var pointX = _e.pageX;
-
-            // cancel slide event if move-y more than move-x
-            if (!this.slideStarted) {
-              // calculate move x-y
-              var moveX = Math.abs(this.xStart - pointX);
-              var moveY = Math.abs(this.yStart - _e.pageY);
-              var border = 10;     // flick distance border
-              //TODO border-value should use divice-size
-              if (moveX > border || moveY > border) {
-                if (moveX < moveY) {
-                  this.touched = false;
-                  return;
-                } else {
-                  // if slide started, don't need cancel horizontal slider
-                  this.slideStarted = true;
-                }
-              } else {
-                return;
-              }
-            }
-            e.preventDefault();
-
-            this.left = (this.left || 0) - (this.pageX - pointX);
-            this.pageX = pointX;
-
-            if (this.left < 0 && this.left > thumbLeftMax) {
-              $(this).css({left: this.left});
-            } else if (this.left >= 0) {
-              $(this).css({left: 0});
-            } else if (this.left <= thumbLeftMax) {
-              $(this).css({left: thumbLeftMax});
-            }
-          },
-          'touchend mouseup mouseout': function() {
-            if (!this.touched) {
-              return;
-            }
-            //TODO should fix pc-anchor tag link action
-            this.touched = false;
-            // thumbnail slides only flick-distance
-          }
-        });
-      // end of thumbnail-slider
-      }
-
-      slideTo(1);     // slide to first element
-
-      _this.initEvents();
-    },
-
-    initEvents: function() {
-      var _this = this;
-
-      $(window).bind('load', function() {
-        _this.adjustHeight();
-        _this.$wrapper.find('.arrow.hidden').removeClass('hidden');
-      });
-
-      $(window).bind("resize", function() {
-        var _baseWidth = Math.round(_this.$mainPane.width());
-        if (_baseWidth === _this.baseWidth) {
-          return;
-        }
-        _this.baseWidth = _baseWidth;
-        // adjust main slider size
-        _this.adjustSize();
-      });
-    }
-  };
-
-
   return this.each(function() {
     var slider = new Slidery(this, jQuery, opts);
 
+    slider.initLayout();
     slider.init();
   });
 };
