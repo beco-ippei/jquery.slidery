@@ -99,54 +99,58 @@ Slidery.prototype = {
     $panel.touched = true;
   },
 
-  initLayout: function() {
-    var _this = this;
-    _this.currentIndex = 1;      // slider start index
+  currentIndex: 1,      // slider start index
+  leftStart: 0,
+  leftMax: null,        //TODO: is this need??
+  positionFirst: null,
+  positionLast: null,
 
-    _this.$wrapper = $(_this.target);
-    var $mainPane = _this.$wrapper.find(".main-pane");
-    _this.$mainPane = $mainPane;
-    _this.$slider = _this.$wrapper.find('.slider');
+  initLayout: function() {
+    this.$wrapper = $(this.target);
+    this.$mainPane = this.$wrapper.find(".main-pane");
+    this.$slider = this.$wrapper.find('.slider');
 
     // adjust box-layout order
-    $mainPane.append(_this.$slider.remove());
+    this.$mainPane.append(this.$slider.remove());
 
     // append index-attr
-    _this.$slider.find('ul li').each(function(idx) {
+    this.$slider.find('ul li').each(function(idx) {
       $(this).attr('data-index', idx+1).addClass('slider-item');
     });
 
     // li-item copy to before-first / after-last, for loop slider
-    var $slider_first_child = _this.$slider.find('ul li:first-child').clone(true);
-    _this.$slider.find('ul li:first-child')
-      .before(_this.$slider.find('ul li:last-child').clone(true));
-    _this.$slider.find('ul li:last-child').after($slider_first_child);
+    this.setSliderItemForLoop(this.$slider.find('ul'));
 
-    _this.$sFmain_ul = _this.$slider.children('ul');
-    var $sFmain_li = _this.$sFmain_ul.children('li');
-    _this.$sFmain_li = $sFmain_li;
+    this.$sFmain_ul = this.$slider.children('ul');
+    this.$sFmain_li = this.$sFmain_ul.children('li');
 
     //_this.listCount = $sFmain_ul.children('li').length;
-    _this.listCount = _this.$sFmain_li.length;
-    _this.leftStart = 0;
+    this.listCount = this.$sFmain_li.length;
 
-    _this.baseWidth = Math.round($mainPane.width());
-    _this.leftMax = null;
-    _this.positionFirst = null;
-    _this.positionLast = null;
+    this.baseWidth = Math.round(this.$mainPane.width());
 
     // adjust initial size
-    var initialHeight = _this.baseWidth +
-      (_this.initialAdditionalHeight < 1 ?
-        _this.baseWidth*_this.initialAdditionalHeight :
-        _this.initialAdditionalHeight);
-    _this.adjustSize(initialHeight);
+    this.adjustSize(this.calculateInitialHeight());
 
-    $sFmain_li.find('img').bind('load', function() {
-      _this.adjustHeight();
-    });
+    this.initArrows();
+  },
 
-    _this.initArrows();
+  setSliderItemForLoop: function($slider_ul) {
+    // li-item copy to before-first / after-last, for loop slider
+    var $first_child = $slider_ul.find('li:first-child').clone(true);
+    $slider_ul.find('li:first-child')
+      .before($slider_ul.find('li:last-child').clone(true));
+    $slider_ul.find('li:last-child').after($first_child);
+  },
+
+  calculateInitialHeight: function() {
+    var height = this.baseWidth;
+    if (this.initialAdditionalHeight < 1) {
+      height += this.baseWidth * this.initialAdditionalHeight;
+    } else {
+      height += this.initialAdditionalHeight;
+    }
+    return height;
   },
 
   slideTo: function(index) {
@@ -232,6 +236,7 @@ Slidery.prototype = {
     // never mind "devicePixelRatio"
 
     // slider for main-pane
+    _this.$sFmain_ul.first__ = false;
     var isTouch = ('ontouchstart' in window);
     _this.$sFmain_ul.on({
       'touchstart mousedown': function(e) {
@@ -239,6 +244,7 @@ Slidery.prototype = {
         _this.startSliding(e, _this.$sFmain_ul);
       },
       'touchmove mousemove': function(e) {
+        //TODO $sFmain_ul should replace with `this`
         if (!_this.$sFmain_ul.touched) {
           return;
         }
@@ -278,8 +284,8 @@ Slidery.prototype = {
 
         if (_this.$sFmain_ul.left >= _this.leftStart) {
           _this.$sFmain_ul.left = _this.leftStart;
-        } else if (_this.$sFmain_ul.left <= _this.$sFmain_ul.leftMax) {
-          _this.$sFmain_ul.left = _this.$sFmain_ul.leftMax;
+        } else if (_this.$sFmain_ul.left <= _this.leftMax) {
+          _this.$sFmain_ul.left = _this.leftMax;
         }
         _this.$sFmain_ul.css({left: _this.$sFmain_ul.left});
 
@@ -412,7 +418,6 @@ Slidery.prototype = {
       // start of thumbnail-slider
       $thumb_ul.on({
         'touchstart mousedown': function(e) {
-console.log('thumb - touchstart');
           _this.startSliding(e, $thumb_ul);
         },
         'touchmove mousemove': function(e) {
@@ -475,6 +480,10 @@ console.log('thumb - touchstart');
 
   initEvents: function() {
     var _this = this;
+
+    _this.$sFmain_li.find('img').bind('load', function() {
+      _this.adjustHeight();
+    });
 
     $(window).bind('load', function() {
       _this.adjustHeight();
