@@ -101,21 +101,15 @@ Slidery.prototype = {
 
   initLayout: function() {
     var _this = this;
-    //var currentIndex = 1;      // slider start index
     _this.currentIndex = 1;      // slider start index
 
     _this.$wrapper = $(_this.target);
-//    _this.$wrapper = $wrapper;
     var $mainPane = _this.$wrapper.find(".main-pane");
     _this.$mainPane = $mainPane;
-    _this.$arrowLeft = $mainPane.find(".arrow.left");
-    _this.$arrowRight = $mainPane.find(".arrow.right");
     _this.$slider = _this.$wrapper.find('.slider');
-//    _this.$slider = $slider;
 
     // adjust box-layout order
-    $mainPane.append(_this.$slider.remove())
-      .append(_this.$arrowLeft.remove()).append(_this.$arrowRight.remove());
+    $mainPane.append(_this.$slider.remove());
 
     // append index-attr
     _this.$slider.find('ul li').each(function(idx) {
@@ -129,7 +123,6 @@ Slidery.prototype = {
     _this.$slider.find('ul li:last-child').after($slider_first_child);
 
     _this.$sFmain_ul = _this.$slider.children('ul');
-//    _this.$sFmain_ul = $sFmain_ul;
     var $sFmain_li = _this.$sFmain_ul.children('li');
     _this.$sFmain_li = $sFmain_li;
 
@@ -151,6 +144,76 @@ Slidery.prototype = {
 
     $sFmain_li.find('img').bind('load', function() {
       _this.adjustHeight();
+    });
+
+    _this.initArrows();
+  },
+
+  slideTo: function(index) {
+    this.currentIndex = index;
+    var leftPosition = -(this.baseWidth*this.currentIndex);
+    var callback = null;
+    var $panel = this.$sFmain_ul;
+
+    if (leftPosition > this.positionFirst) {
+      var slidePosition = this.positionLast;
+      callback = function() {
+        // flick to right and slided to last-item
+        $panel.css({left: slidePosition});
+      };
+      this.currentIndex = this.listCount-2;
+    } else if (leftPosition < this.positionLast) {
+      var slidePosition = this.positionFirst;
+      callback = function() {
+        // flick to left and slided to first-item
+        $panel.css({left: slidePosition});
+      };
+      this.currentIndex = 1;
+    }
+
+    this.$sFmain_ul.stop()
+      .animate({left: leftPosition}, this.duration, this.easing, callback);
+
+    this.syncTbumbnail(this.currentIndex);
+  },
+
+  syncTbumbnail: function(idx) {
+    try {
+      this.$thumb_ul.children('li.active').removeClass('active');
+//console.log('thumb selector -> li:nth-child('+idx+')');
+      var $currentThumb = this.$thumb_ul.children('li:nth-child('+idx+')');
+      $currentThumb.addClass('active');
+
+      var ul_start = Math.abs(parseInt(this.$thumb_ul.css('left')));
+      var ul_end   = ul_start + this.thumbViewWidth;
+      var li_left  = $currentThumb.position().left;
+      var li_right = li_left + $currentThumb.width();
+
+      if (li_left < ul_start) {
+        this.$thumb_ul.animate({left: -li_left});
+      } else if (ul_end < li_right) {
+        this.$thumb_ul.animate({left: -(li_right-this.thumbViewWidth+5)});
+        // 5 is border-width + li-margin
+      }
+    } catch (ex) {
+      console.dir(ex);
+    }
+  },
+
+  initArrows: function() {
+    var _this = this;
+    var $arrowLeft = _this.$mainPane.find(".arrow.left");
+    var $arrowRight = _this.$mainPane.find(".arrow.right");
+
+    // add arrows behind slider-pane
+    _this.$mainPane.append($arrowLeft.remove()).append($arrowRight.remove());
+
+    $arrowLeft.on("click", function() {
+      _this.slideTo(_this.currentIndex-1);
+    });
+
+    $arrowRight.on("click", function() {
+      _this.slideTo(_this.currentIndex+1);
     });
   },
 
@@ -233,76 +296,15 @@ Slidery.prototype = {
         _this.$sFmain_ul.touched = false;
 
         if (_this.$sFmain_ul.left < _this.leftBegin) {
-          // flick to left (want to show next image)
-  //          slideTo(this.startIndex+1);
-          slideTo(_this.startIndex+1, _this.$sFmain_ul.left);
+          _this.slideTo(_this.startIndex+1);
 
         } else if (_this.leftBegin < _this.$sFmain_ul.left) {
           // flick to right (want to show prev image)
-  //          slideTo(this.startIndex-1);
-          slideTo(_this.startIndex-1, _this.$sFmain_ul.left);
+          _this.slideTo(_this.startIndex-1);
         }
       }
     });
     // end of slider for main-pane
-
-    var slideTo = function(index) {
-      _this.currentIndex = index;
-      var leftPosition = -(_this.baseWidth*_this.currentIndex);
-      var callback = null;
-
-      if (leftPosition > _this.positionFirst) {
-        callback = function() {
-          // flick to right and slided to last-item
-          _this.$sFmain_ul.css({left: _this.positionLast});
-        };
-        _this.currentIndex = _this.listCount-2;
-      } else if (leftPosition < _this.positionLast) {
-        callback = function() {
-          // flick to left and slided to first-item
-          _this.$sFmain_ul.css({left: _this.positionFirst});
-        };
-        _this.currentIndex = 1;
-      }
-
-      _this.$sFmain_ul.stop()
-        .animate({left: leftPosition}, _this.duration, _this.easing, callback);
-
-      syncTbumbnail(_this.currentIndex);
-    };
-
-    _this.$arrowLeft.on("click", function() {
-      slideTo(_this.currentIndex-1);
-    });
-
-    _this.$arrowRight.on("click", function() {
-      slideTo(_this.currentIndex+1);
-    });
-
-
-    var $currentThumb;
-    var syncTbumbnail = function(idx) {
-      try {
-        $thumb_ul.children('li.active').removeClass('active');
-//console.log('thumb selector -> li:nth-child('+idx+')');
-        $currentThumb = $thumb_ul.children('li:nth-child('+idx+')');
-        $currentThumb.addClass('active');
-
-        var ul_start = Math.abs(parseInt($thumb_ul.css('left')));
-        var ul_end   = ul_start + thumbViewWidth;
-        var li_left  = $currentThumb.position().left;
-        var li_right = li_left + $currentThumb.width();
-
-        if (li_left < ul_start) {
-          $thumb_ul.animate({left: -li_left});
-        } else if (ul_end < li_right) {
-          $thumb_ul.animate({left: -(li_right-thumbViewWidth+5)});
-          // 5 is border-width + li-margin
-        }
-      } catch (ex) {
-        console.dir(ex);
-      }
-    };
 
     // make thumbnail navigator
     //var $thumb  = $wrapper.find('.thumb-pane');
@@ -316,7 +318,7 @@ Slidery.prototype = {
       $thumb_al = _this.$thumb.find('.arrow.left');
       $thumb_ar = _this.$thumb.find('.arrow.right');
 
-      var thumbViewWidth;
+      _this.thumbViewWidth = 0;
       var thumbWrapperHeight = _this.thumbSize+10;
 
       var adjustThumbWrapperSize = function() {
@@ -330,8 +332,8 @@ Slidery.prototype = {
         $thumb_al.css(thumbArrowCss);
         $thumb_ar.css(thumbArrowCss);
 
-        thumbViewWidth = Math.floor(_this.baseWidth*0.8);
-        $thumb_list.css({height: thumbWrapperHeight, width: thumbViewWidth});
+        _this.thumbViewWidth = Math.floor(_this.baseWidth*0.8);
+        $thumb_list.css({height: thumbWrapperHeight, width: _this.thumbViewWidth});
       };
       adjustThumbWrapperSize();
 
@@ -342,6 +344,7 @@ Slidery.prototype = {
       });
 
       var $thumb_ul = $('<ul></ul>');
+      _this.$thumb_ul = $thumb_ul;
       $thumb_list.append($thumb_ul);
       _this.$slider.find('li.slider-item img.thumb').each(function() {
         var $_li = $('<li></li>').append($(this).remove());
@@ -359,7 +362,7 @@ Slidery.prototype = {
         // slide direction (slide to  left => add to left)
         var vector = (direction === 'left' ? 1 : -1);
         var ulLeft = parseInt($thumb_ul.css('left')) || 0;
-        var moveTo = ulLeft + (vector * thumbViewWidth/2);
+        var moveTo = ulLeft + (vector * _this.thumbViewWidth/2);
 
         //TODO slide to first or last, if position is last or first
         if (0 <= moveTo) {
@@ -394,7 +397,7 @@ Slidery.prototype = {
         $thumb_ul.css({height: thumbWrapperHeight, width: totalWidth});
         $thumb_li.css({height: _this.thumbSize});
 
-        thumbLeftMax = -(totalWidth-thumbViewWidth);
+        thumbLeftMax = -(totalWidth-_this.thumbViewWidth);
       };
 
       $(window).load(function() {
@@ -403,7 +406,7 @@ Slidery.prototype = {
       });
 
       $thumb_li.click(function() {
-        slideTo($thumb_li.index(this)+1);
+        _this.slideTo($thumb_li.index(this)+1);
       });
 
       // start of thumbnail-slider
@@ -465,7 +468,7 @@ console.log('thumb - touchstart');
     // end of thumbnail-slider
     }
 
-    slideTo(1);     // slide to first element
+    _this.slideTo(1);     // slide to first element
 
     _this.initEvents();
   },
