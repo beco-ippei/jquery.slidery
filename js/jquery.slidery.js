@@ -20,6 +20,8 @@ var Slidery = function(_target, $, opts) {
   this.initialAdditionalHeight = opts.initialAdditionalHeight || 0.5;
 
   this.thumbSize = opts.thumbSize || 60;
+
+  this.flickBorder = 15;     // flick distance border
 };
 
 Slidery.prototype = {
@@ -184,7 +186,6 @@ Slidery.prototype = {
   syncTbumbnail: function(idx) {
     try {
       this.$thumb_ul.children('li.active').removeClass('active');
-//console.log('thumb selector -> li:nth-child('+idx+')');
       var $currentThumb = this.$thumb_ul.children('li:nth-child('+idx+')');
       $currentThumb.addClass('active');
 
@@ -231,10 +232,6 @@ Slidery.prototype = {
       return isTouch && te.changedTouches ? te.changedTouches[0] : e;
     };
 
-    var flickBorder = 15;     // flick distance border
-    //TODO change "shikii-chi" with display size
-    // never mind "devicePixelRatio"
-
     // slider for main-pane
     _this.$sFmain_ul.first__ = false;
     var isTouch = ('ontouchstart' in window);
@@ -252,24 +249,11 @@ Slidery.prototype = {
         var _e = _event(event, e);
         var pointX = _e.pageX;
 
-        // cancel slide event if move-y more than move-x
-        if (!_this.$sFmain_ul.slideStarted) {
-          // calculate move x-y
-          var moveX = Math.abs(_this.$sFmain_ul.xStart - pointX);
-          var moveY = Math.abs(_this.$sFmain_ul.yStart - _e.pageY);
-          if (moveX > flickBorder || moveY > flickBorder) {
-            if (moveX < moveY) {
-              _this.$sFmain_ul.touched = false;
-              return;
-            } else {
-              // if slide started, don't need cancel horizontal slider
-              _this.$sFmain_ul.slideStarted = true;
-            }
-          } else {
-            // don't move until move over 'border' for x or y.
-            return;
-          }
+        // check slider-position and get how manipulate after.
+        if (!_this._isSliderMovable(_this.$sFmain_ul, pointX, _e.pageY)) {
+          return;
         }
+
         e.preventDefault();
 
         if (_this.$sFmain_ul.moving) {
@@ -428,25 +412,11 @@ Slidery.prototype = {
           var _e = _event(event, e);
           var pointX = _e.pageX;
 
-          // cancel slide event if move-y more than move-x
-          if (!$thumb_ul.slideStarted) {
-            // calculate move x-y
-            var moveX = Math.abs($thumb_ul.xStart - pointX);
-            var moveY = Math.abs($thumb_ul.yStart - _e.pageY);
-            var border = 10;     // flick distance border
-            //TODO border-value should use divice-size
-            if (moveX > border || moveY > border) {
-              if (moveX < moveY) {
-                $thumb_ul.touched = false;
-                return;
-              } else {
-                // if slide started, don't need cancel horizontal slider
-                $thumb_ul.slideStarted = true;
-              }
-            } else {
-              return;
-            }
+          // check slider-position and get how manipulate after.
+          if (!_this._isSliderMovable($thumb_ul, pointX, _e.pageY)) {
+            return;
           }
+
           e.preventDefault();
 
           $thumb_ul.left = ($thumb_ul.left || 0) - ($thumb_ul.pageX - pointX);
@@ -476,6 +446,34 @@ Slidery.prototype = {
     _this.slideTo(1);     // slide to first element
 
     _this.initEvents();
+  },
+
+  /**
+   * @return boolean ... is return after "return this method"
+   */
+  _isSliderMovable: function($panel, x, y) {
+    // cancel slide event if move-y more than move-x
+    if ($panel.slideStarted) {
+      return true;
+    }
+
+    // calculate move x-y
+    var moveX = Math.abs($panel.xStart - x);
+    var moveY = Math.abs($panel.yStart - y);
+    //TODO border-value should use divice-size
+    if (moveX > this.flickBorder || moveY > this.flickBorder) {
+      if (moveX < moveY) {
+        $panel.touched = false;
+        //TODO should be "pure function"
+        return false;
+      } else {
+        // if slide started, don't need cancel horizontal slider
+        $panel.slideStarted = true;
+      }
+    } else {
+      return false;
+    }
+    return true;
   },
 
   initEvents: function() {
