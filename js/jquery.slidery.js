@@ -309,11 +309,12 @@ Slidery.prototype = {
       $thumb_ar = _this.$thumb.find('.arrow.right');
 
       _this.thumbViewWidth = 0;
-      var thumbWrapperHeight = _this.thumbSize+10;
+      //var thumbWrapperHeight = _this.thumbSize+10;
+      _this.thumbWrapperHeight = _this.thumbSize+10;
 
       var adjustThumbWrapperSize = function() {
         //TODO set max-width to ul-width
-        _this.$thumb.css({height: thumbWrapperHeight, width: _this.baseWidth});
+        _this.$thumb.css({height: _this.thumbWrapperHeight, width: _this.baseWidth});
 
         // fixed for device
         var thumbArrowWidth = Math.floor(_this.baseWidth*0.1);
@@ -323,7 +324,7 @@ Slidery.prototype = {
         $thumb_ar.css(thumbArrowCss);
 
         _this.thumbViewWidth = Math.floor(_this.baseWidth*0.8);
-        $thumb_list.css({height: thumbWrapperHeight, width: _this.thumbViewWidth});
+        $thumb_list.css({height: _this.thumbWrapperHeight, width: _this.thumbViewWidth});
       };
       adjustThumbWrapperSize();
 
@@ -357,8 +358,8 @@ Slidery.prototype = {
         //TODO slide to first or last, if position is last or first
         if (0 <= moveTo) {
           moveTo = 0;
-        } else if (moveTo <= thumbLeftMax) {
-          moveTo = thumbLeftMax;
+        } else if (moveTo <= _this.thumbLeftMax) {
+          moveTo = _this.thumbLeftMax;
         }
         $thumb_ul.animate({left: moveTo}, _this.duration, this.easing);
       };
@@ -370,33 +371,39 @@ Slidery.prototype = {
         moveThumbTo('right');
       });
 
-      var $thumb_li = $thumb_ul.children('li');
-      var thumbCount = $thumb_li.length;
-      var thumbListMargin = 4;    // li { margin-right: 3px }
+      //TODO should be "sub-class member-var for thumbnail"
+      _this.$thumb_li = $thumb_ul.children('li');
+      _this.thumbCount = _this.$thumb_li.length;
+      _this.thumbListMargin = 4;    // li { margin-right: 3px }
+      //var $thumb_li = $thumb_ul.children('li');
+      //var thumbCount = $thumb_li.length;
+      //var thumbListMargin = 4;    // li { margin-right: 3px }
+
       //TODO should get from $thumb_li's 'horizontal-margin' or left+right ?
-      var thumbLeftMax = -400;      // set initial temporary value
+      //var thumbLeftMax = -400;      // set initial temporary value
+      _this.thumbLeftMax = -400;      // set initial temporary value
 
-      var adjustThumbUlSize = function() {
-        //TODO if will not change thumbnail-size, don't need this.
-        var total = 0;
-        $thumb_li.each(function() {
-          total += $(this).width();
-        });
-        var totalWidth = total + thumbListMargin*(thumbCount+1);
+//      var adjustThumbUlSize = function() {
+//        //TODO if will not change thumbnail-size, don't need this.
+//        var total = 0;
+//        $thumb_li.each(function() {
+//          total += $(this).width();
+//        });
+//        var totalWidth = total + thumbListMargin*(thumbCount+1);
+//
+//        $thumb_ul.css({height: thumbWrapperHeight, width: totalWidth});
+//        $thumb_li.css({height: _this.thumbSize});
+//
+//        thumbLeftMax = -(totalWidth-_this.thumbViewWidth);
+//      };
 
-        $thumb_ul.css({height: thumbWrapperHeight, width: totalWidth});
-        $thumb_li.css({height: _this.thumbSize});
+//      $(window).load(function() {
+//        _this.$thumb.removeClass('hidden');
+//        adjustThumbUlSize();
+//      });
 
-        thumbLeftMax = -(totalWidth-_this.thumbViewWidth);
-      };
-
-      $(window).load(function() {
-        _this.$thumb.removeClass('hidden');
-        adjustThumbUlSize();
-      });
-
-      $thumb_li.click(function() {
-        _this.slideTo($thumb_li.index(this)+1);
+      _this.$thumb_li.click(function() {
+        _this.slideTo(_this.$thumb_li.index(this)+1);
       });
 
       // start of thumbnail-slider
@@ -422,12 +429,12 @@ Slidery.prototype = {
           $thumb_ul.left = ($thumb_ul.left || 0) - ($thumb_ul.pageX - pointX);
           $thumb_ul.pageX = pointX;
 
-          if ($thumb_ul.left < 0 && $thumb_ul.left > thumbLeftMax) {
+          if ($thumb_ul.left < 0 && $thumb_ul.left > _this.thumbLeftMax) {
             $thumb_ul.css({left: $thumb_ul.left});
           } else if ($thumb_ul.left >= 0) {
             $thumb_ul.css({left: 0});
-          } else if ($thumb_ul.left <= thumbLeftMax) {
-            $thumb_ul.css({left: thumbLeftMax});
+          } else if ($thumb_ul.left <= _this.thumbLeftMax) {
+            $thumb_ul.css({left: _this.thumbLeftMax});
           }
         },
         'touchend mouseup mouseout': function() {
@@ -446,6 +453,20 @@ Slidery.prototype = {
     _this.slideTo(1);     // slide to first element
 
     _this.initEvents();
+  },
+
+  adjustThumbUlSize: function() {
+    //TODO if will not change thumbnail-size, don't need this.
+    var total = 0;
+    this.$thumb_li.each(function() {
+      total += $(this).width();
+    });
+    var totalWidth = total + this.thumbListMargin*(this.thumbCount+1);
+
+    this.$thumb_ul.css({height: this.thumbWrapperHeight, width: totalWidth});
+    this.$thumb_li.css({height: this.thumbSize});
+
+    this.thumbLeftMax = -(totalWidth-this.thumbViewWidth);
   },
 
   /**
@@ -487,6 +508,13 @@ Slidery.prototype = {
       _this.adjustHeight();
       _this.$wrapper.find('.arrow.hidden').removeClass('hidden');
     });
+
+    if (_this.$thumb) {
+      $(window).load(function() {
+        _this.$thumb.removeClass('hidden');
+        _this.adjustThumbUlSize();
+      });
+    }
 
     $(window).bind("resize", function() {
       var _baseWidth = Math.round(_this.$mainPane.width());
