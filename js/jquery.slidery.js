@@ -241,43 +241,8 @@ Slidery.prototype = {
         _this.startSliding(e, _this.$sFmain_ul);
       },
       'touchmove mousemove': function(e) {
-        //TODO $sFmain_ul should replace with `this`
-        if (!_this.$sFmain_ul.touched) {
-          return;
-        }
-
-        var _e = _event(event, e);
-        var pointX = _e.pageX;
-
-        // check slider-position and get how manipulate after.
-        if (!_this._isSliderMovable(_this.$sFmain_ul, pointX, _e.pageY)) {
-          return;
-        }
-
-        e.preventDefault();
-
-        if (_this.$sFmain_ul.moving) {
-          return;
-        }
-        _this.$sFmain_ul.moving = true;
-
-        //var distance = this.pageX - pointX;
-        _this.$sFmain_ul.left = _this.$sFmain_ul.left
-              - (_this.$sFmain_ul.pageX - pointX);
-        _this.$sFmain_ul.pageX = pointX;
-
-        if (_this.$sFmain_ul.left >= _this.leftStart) {
-          _this.$sFmain_ul.left = _this.leftStart;
-        } else if (_this.$sFmain_ul.left <= _this.leftMax) {
-          _this.$sFmain_ul.left = _this.leftMax;
-        }
-        _this.$sFmain_ul.css({left: _this.$sFmain_ul.left});
-
-        //var prop = {'-webkit-transform': 'translate3d(-'+distance+'px,0,0)'};
-        //console.log(prop);
-        //$(this).css(prop);
-
-        _this.$sFmain_ul.moving = false;
+        //TODO make slider-hander class
+        _this.handleMove(e, _this.$sFmain_ul, _this.leftMax, _this.leftStart);
       },
       'touchend mouseup mouseout': function() {
         if (!_this.$sFmain_ul.touched) {
@@ -355,30 +320,7 @@ Slidery.prototype = {
           _this.startSliding(e, $thumb_ul);
         },
         'touchmove mousemove': function(e) {
-          if (!$thumb_ul.touched) {
-            return;
-          }
-
-          var _e = _event(event, e);
-          var pointX = _e.pageX;
-
-          // check slider-position and get how manipulate after.
-          if (!_this._isSliderMovable($thumb_ul, pointX, _e.pageY)) {
-            return;
-          }
-
-          e.preventDefault();
-
-          $thumb_ul.left = ($thumb_ul.left || 0) - ($thumb_ul.pageX - pointX);
-          $thumb_ul.pageX = pointX;
-
-          if ($thumb_ul.left < 0 && $thumb_ul.left > _this.thumbLeftMax) {
-            $thumb_ul.css({left: $thumb_ul.left});
-          } else if ($thumb_ul.left >= 0) {
-            $thumb_ul.css({left: 0});
-          } else if ($thumb_ul.left <= _this.thumbLeftMax) {
-            $thumb_ul.css({left: _this.thumbLeftMax});
-          }
+          _this.handleMove(e, $thumb_ul, _this.thumbLeftMax, 0);
         },
         'touchend mouseup mouseout': function() {
           if (!$thumb_ul.touched) {
@@ -395,6 +337,41 @@ Slidery.prototype = {
     _this.slideTo(1);     // slide to first element
 
     _this.initEvents();
+  },
+
+  handleMove: function(e, $panel, left, right) {
+    //TODO $sFmain_ul should replace with `this`
+    if (!$panel.touched) {
+      return;
+    }
+
+    var _e = this._event(event, e);
+    var pointX = _e.pageX;
+
+    // check slider-position and get how manipulate after.
+    if (!this.isSliderMovable($panel, pointX, _e.pageY)) {
+      return;
+    }
+
+    e.preventDefault();
+
+    if ($panel.moving) {
+      return;         //TODO maybe useless
+    }
+    $panel.moving = true;
+
+    //var distance = this.pageX - pointX;
+    $panel.left = $panel.left - ($panel.pageX - pointX);
+    $panel.pageX = pointX;
+
+    if ($panel.left >= right) {
+      $panel.left = right;
+    } else if ($panel.left <= left) {
+      $panel.left = left;
+    }
+    $panel.css({left: $panel.left});
+
+    $panel.moving = false;
   },
 
   adjustThumbUlSize: function() {
@@ -444,7 +421,7 @@ Slidery.prototype = {
   /**
    * @return boolean ... is return after "return this method"
    */
-  _isSliderMovable: function($panel, x, y) {
+  isSliderMovable: function($panel, x, y) {
     // cancel slide event if move-y more than move-x
     if ($panel.slideStarted) {
       return true;
