@@ -304,39 +304,20 @@ Slidery.prototype = {
     if (_this.$thumb) {
       _this.$thumb.addClass('hidden');
 
-      $thumb_list = _this.$thumb.find('.thumb-list');
-      $thumb_al = _this.$thumb.find('.arrow.left');
-      $thumb_ar = _this.$thumb.find('.arrow.right');
+      _this.$thumb_list = _this.$thumb.find('.thumb-list');
+      _this.$thumb_al = _this.$thumb.find('.arrow.left');
+      _this.$thumb_ar = _this.$thumb.find('.arrow.right');
 
       _this.thumbViewWidth = 0;
       //var thumbWrapperHeight = _this.thumbSize+10;
       _this.thumbWrapperHeight = _this.thumbSize+10;
 
-      var adjustThumbWrapperSize = function() {
-        //TODO set max-width to ul-width
-        _this.$thumb.css({height: _this.thumbWrapperHeight, width: _this.baseWidth});
-
-        // fixed for device
-        var thumbArrowWidth = Math.floor(_this.baseWidth*0.1);
-        //TODO should calc
-        var thumbArrowCss = {height: 30, padding: '20px 0', width: thumbArrowWidth};
-        $thumb_al.css(thumbArrowCss);
-        $thumb_ar.css(thumbArrowCss);
-
-        _this.thumbViewWidth = Math.floor(_this.baseWidth*0.8);
-        $thumb_list.css({height: _this.thumbWrapperHeight, width: _this.thumbViewWidth});
-      };
-      adjustThumbWrapperSize();
-
-      $(window).bind("resize", function() {
-        // adjust thumbnail size
-        adjustThumbWrapperSize();
-        adjustThumbUlSize();
-      });
+      // adjust thumbnail panel size
+      _this.adjustThumbWrapperSize();
 
       var $thumb_ul = $('<ul></ul>');
       _this.$thumb_ul = $thumb_ul;
-      $thumb_list.append($thumb_ul);
+      _this.$thumb_list.append($thumb_ul);
       _this.$slider.find('li.slider-item img.thumb').each(function() {
         var $_li = $('<li></li>').append($(this).remove());
         $thumb_ul.append($_li);
@@ -349,58 +330,20 @@ Slidery.prototype = {
       $thumb_ul.find('li:first-child').remove();
       $thumb_ul.find('li:last-child').remove();
 
-      var moveThumbTo = function(direction) {
-        // slide direction (slide to  left => add to left)
-        var vector = (direction === 'left' ? 1 : -1);
-        var ulLeft = parseInt($thumb_ul.css('left')) || 0;
-        var moveTo = ulLeft + (vector * _this.thumbViewWidth/2);
-
-        //TODO slide to first or last, if position is last or first
-        if (0 <= moveTo) {
-          moveTo = 0;
-        } else if (moveTo <= _this.thumbLeftMax) {
-          moveTo = _this.thumbLeftMax;
-        }
-        $thumb_ul.animate({left: moveTo}, _this.duration, this.easing);
-      };
-
-      $($thumb_al).click(function() {
-        moveThumbTo('left');
+      _this.$thumb_al.click(function() {
+        _this.moveThumbTo('left');
       });
-      $($thumb_ar).click(function() {
-        moveThumbTo('right');
+      _this.$thumb_ar.click(function() {
+        _this.moveThumbTo('right');
       });
 
       //TODO should be "sub-class member-var for thumbnail"
       _this.$thumb_li = $thumb_ul.children('li');
       _this.thumbCount = _this.$thumb_li.length;
       _this.thumbListMargin = 4;    // li { margin-right: 3px }
-      //var $thumb_li = $thumb_ul.children('li');
-      //var thumbCount = $thumb_li.length;
-      //var thumbListMargin = 4;    // li { margin-right: 3px }
 
       //TODO should get from $thumb_li's 'horizontal-margin' or left+right ?
-      //var thumbLeftMax = -400;      // set initial temporary value
       _this.thumbLeftMax = -400;      // set initial temporary value
-
-//      var adjustThumbUlSize = function() {
-//        //TODO if will not change thumbnail-size, don't need this.
-//        var total = 0;
-//        $thumb_li.each(function() {
-//          total += $(this).width();
-//        });
-//        var totalWidth = total + thumbListMargin*(thumbCount+1);
-//
-//        $thumb_ul.css({height: thumbWrapperHeight, width: totalWidth});
-//        $thumb_li.css({height: _this.thumbSize});
-//
-//        thumbLeftMax = -(totalWidth-_this.thumbViewWidth);
-//      };
-
-//      $(window).load(function() {
-//        _this.$thumb.removeClass('hidden');
-//        adjustThumbUlSize();
-//      });
 
       _this.$thumb_li.click(function() {
         _this.slideTo(_this.$thumb_li.index(this)+1);
@@ -438,7 +381,6 @@ Slidery.prototype = {
           }
         },
         'touchend mouseup mouseout': function() {
-//console.log('thumb - touchend');
           if (!$thumb_ul.touched) {
             return;
           }
@@ -467,6 +409,36 @@ Slidery.prototype = {
     this.$thumb_li.css({height: this.thumbSize});
 
     this.thumbLeftMax = -(totalWidth-this.thumbViewWidth);
+  },
+
+  adjustThumbWrapperSize: function() {
+    //TODO set max-width to ul-width
+    this.$thumb.css({height: this.thumbWrapperHeight, width: this.baseWidth});
+
+    // fixed for device
+    var thumbArrowWidth = Math.floor(this.baseWidth*0.1);
+    //TODO should calc
+    var thumbArrowCss = {height: 30, padding: '20px 0', width: thumbArrowWidth};
+    this.$thumb_al.css(thumbArrowCss);
+    this.$thumb_ar.css(thumbArrowCss);
+
+    this.thumbViewWidth = Math.floor(this.baseWidth*0.8);
+    this.$thumb_list.css({height: this.thumbWrapperHeight, width: this.thumbViewWidth});
+  },
+
+  moveThumbTo: function(direction) {
+    // slide direction (slide to  left => add to left)
+    var vector = (direction === 'left' ? 1 : -1);
+    var ulLeft = parseInt(this.$thumb_ul.css('left')) || 0;
+    var moveTo = ulLeft + (vector * this.thumbViewWidth/2);
+
+    //TODO slide to first or last, if position is last or first
+    if (0 <= moveTo) {
+      moveTo = 0;
+    } else if (moveTo <= this.thumbLeftMax) {
+      moveTo = this.thumbLeftMax;
+    }
+    this.$thumb_ul.animate({left: moveTo}, this.duration, this.easing);
   },
 
   /**
@@ -509,13 +481,6 @@ Slidery.prototype = {
       _this.$wrapper.find('.arrow.hidden').removeClass('hidden');
     });
 
-    if (_this.$thumb) {
-      $(window).load(function() {
-        _this.$thumb.removeClass('hidden');
-        _this.adjustThumbUlSize();
-      });
-    }
-
     $(window).bind("resize", function() {
       var _baseWidth = Math.round(_this.$mainPane.width());
       if (_baseWidth === _this.baseWidth) {
@@ -525,6 +490,19 @@ Slidery.prototype = {
       // adjust main slider size
       _this.adjustSize();
     });
+
+    if (_this.$thumb) {       //TODO `if($thumb)` is valid?
+      $(window).load(function() {
+        _this.$thumb.removeClass('hidden');
+        _this.adjustThumbUlSize();
+      });
+
+      $(window).bind("resize", function() {
+        // adjust thumbnail size
+        _this.adjustThumbWrapperSize();
+        _this.adjustThumbUlSize();
+      });
+    }
   }
 };
 
