@@ -43,6 +43,8 @@ var Slidery = function(_target, $, opts) {
   this.thumbSize = opts.thumbSize || 60;
 
   this.flickBorder = 15;     // flick distance border
+
+  this.isTouch = ('ontouchstart' in window);
 };
 
 // declare consts
@@ -73,7 +75,7 @@ Slidery.prototype = {
     // slide to current item
     this.$sFmain_ul.css({left: -listWidth*this.currentIndex});
 
-    this.isTouch = ('ontouchstart' in window);
+//    this.isTouch = ('ontouchstart' in window);
 
     if (void 0 === _height) {
       this.adjustHeight();     // adjust height with each li-height
@@ -139,9 +141,7 @@ Slidery.prototype = {
 
   initLayout: function() {
     this.$wrapper = $(this.target);
-    //this.$mainPane = this.$wrapper.find(".main-pane");
     this.$mainPane = this.$wrapper.find(Slidery._MAIN_PANE);
-    //this.$slider = this.$wrapper.find('.slider');
     this.$slider = this.$wrapper.find(Slidery._SLIDER);
 
     // adjust box-layout order
@@ -149,22 +149,16 @@ Slidery.prototype = {
 
     // append index-attr
     this.$slider.find('ul li').each(function(idx) {
-      //$(this).attr('data-index', idx+1).addClass('slider-item');
       $(this).attr('data-index', idx+1).addClass(Slidery.SLIDER_ITEM);
     });
 
     // li-item copy to before-first / after-last, for loop slider
-    //this.setSliderItemForLoop(this.$slider.find('ul'));
     this.setSliderItemForLoop(this.$slider.find(Slidery.UL));
 
-    //this.$sFmain_ul = this.$slider.children('ul');
-    //this.$sFmain_li = this.$sFmain_ul.children('li');
     this.$sFmain_ul = this.$slider.children(Slidery.UL);
     this.$sFmain_li = this.$sFmain_ul.children(Slidery.LI);
 
-    //_this.listCount = $sFmain_ul.children('li').length;
     this.listCount = this.$sFmain_li.length;
-
     this.baseWidth = Math.round(this.$mainPane.width());
 
     // adjust initial size
@@ -233,16 +227,17 @@ Slidery.prototype = {
     var leftPosition = -(this.baseWidth*this.currentIndex);
     var callback = null;
     var $panel = this.$sFmain_ul;
+    var slidePosition = null;
 
     if (leftPosition > this.positionFirst) {
-      var slidePosition = this.positionLast;
+      slidePosition = this.positionLast;
       callback = function() {
         // flick to right and slided to last-item
         $panel.css({left: slidePosition});
       };
       this.currentIndex = this.listCount-2;
     } else if (leftPosition < this.positionLast) {
-      var slidePosition = this.positionFirst;
+      slidePosition = this.positionFirst;
       callback = function() {
         // flick to left and slided to first-item
         $panel.css({left: slidePosition});
@@ -298,84 +293,82 @@ Slidery.prototype = {
   init: function() {
     var _this = this;
 
+    _this.initLayout();
+
     //TODO on PC browser, "anchor" tag fired on mouseup-event.
     // maybe fix? move to "onclick", cancel event at "mousemove"
 
-    var _event = function(te, e) {
-      return isTouch && te.changedTouches ? te.changedTouches[0] : e;
-    };
-
     // slider for main-pane
-    _this.$sFmain_ul.first__ = false;
-    var isTouch = ('ontouchstart' in window);
-    _this.$sFmain_ul.on({
-      'touchstart mousedown': function(e) {
-        _this.setStartIndex(e);
-        _this.startSliding(e, _this.$sFmain_ul);
-      },
-      'touchmove mousemove': function(e) {
-        //TODO make slider-hander class
-        _this.handleMove(e, _this.$sFmain_ul, _this.leftMax, _this.leftStart);
-      },
-      'touchend mouseup mouseout': function() {
-        if (!_this.$sFmain_ul.touched) {
-          return;
-        }
-        _this.$sFmain_ul.touched = false;
-
-        if (_this.$sFmain_ul.left < _this.leftBegin) {
-          _this.slideTo(_this.startIndex+1);
-
-        } else if (_this.leftBegin < _this.$sFmain_ul.left) {
-          // flick to right (want to show prev image)
-          _this.slideTo(_this.startIndex-1);
-        }
-      }
-    });
+//    _this.$sFmain_ul.first__ = false;
+//    var isTouch = ('ontouchstart' in window);
+//    _this.$sFmain_ul.on({
+//      'touchstart mousedown': function(e) {
+//        _this.setStartIndex(e);
+//        _this.startSliding(e, _this.$sFmain_ul);
+//      },
+//      'touchmove mousemove': function(e) {
+//        //TODO make slider-hander class
+//        _this.handleMove(e, _this.$sFmain_ul, _this.leftMax, _this.leftStart);
+//      },
+//      'touchend mouseup mouseout': function() {
+//        if (!_this.$sFmain_ul.touched) {
+//          return;
+//        }
+//        _this.$sFmain_ul.touched = false;
+//
+//        if (_this.$sFmain_ul.left < _this.leftBegin) {
+//          _this.slideTo(_this.startIndex+1);
+//
+//        } else if (_this.leftBegin < _this.$sFmain_ul.left) {
+//          // flick to right (want to show prev image)
+//          _this.slideTo(_this.startIndex-1);
+//        }
+//      }
+//    });
     // end of slider for main-pane
 
     // make thumbnail navigator
-    //var $thumb  = $wrapper.find('.thumb-pane');
     _this.$thumb  = _this.$wrapper.find('.thumb-pane');
-    var $thumb_list, $thumb_al, $thumb_ar;
-//    console.dir('$thumb == ' +$thumb);        //debug
     if (_this.$thumb) {
       _this.initThumbLayout();
 
-      _this.$thumb_al.click(function() {
-        _this.moveThumbTo('left');
-      });
-      _this.$thumb_ar.click(function() {
-        _this.moveThumbTo('right');
-      });
-
-      _this.$thumb_li.click(function() {
-        _this.slideTo(_this.$thumb_li.index(this)+1);
-      });
-
-      // start of thumbnail-slider
-      _this.$thumb_ul.on({
-        'touchstart mousedown': function(e) {
-          _this.startSliding(e, _this.$thumb_ul);
-        },
-        'touchmove mousemove': function(e) {
-          _this.handleMove(e, _this.$thumb_ul, _this.thumbLeftMax, 0);
-        },
-        'touchend mouseup mouseout': function() {
-          if (!_this.$thumb_ul.touched) {
-            return;
-          }
-          //TODO should fix pc-anchor tag link action
-          _this.$thumb_ul.touched = false;
-          // thumbnail slides only flick-distance
-        }
-      });
+//      _this.$thumb_al.click(function() {
+//        _this.moveThumbTo('left');
+//      });
+//      _this.$thumb_ar.click(function() {
+//        _this.moveThumbTo('right');
+//      });
+//
+//      _this.$thumb_li.click(function() {
+//        _this.slideTo(_this.$thumb_li.index(this)+1);
+//      });
+//
+//      // start of thumbnail-slider
+//      _this.$thumb_ul.on({
+//        'touchstart mousedown': function(e) {
+//          _this.startSliding(e, _this.$thumb_ul);
+//        },
+//        'touchmove mousemove': function(e) {
+//          _this.handleMove(e, _this.$thumb_ul, _this.thumbLeftMax, 0);
+//        },
+//        'touchend mouseup mouseout': function() {
+//          if (!_this.$thumb_ul.touched) {
+//            return;
+//          }
+//          //TODO should fix pc-anchor tag link action
+//          _this.$thumb_ul.touched = false;
+//          // thumbnail slides only flick-distance
+//        }
+//      });
     // end of thumbnail-slider
     }
 
     _this.slideTo(1);     // slide to first element
 
     _this.initEvents();
+    if (_this.$thumb) {
+      _this.initThumbnailEvents();
+    }
   },
 
   handleMove: function(e, $panel, left, right) {
@@ -507,18 +500,74 @@ Slidery.prototype = {
       _this.adjustSize();
     });
 
-    if (_this.$thumb) {       //TODO `if($thumb)` is valid?
-      $(window).load(function() {
-        _this.$thumb.removeClass('hidden');
-        _this.adjustThumbUlSize();
-      });
+    _this.$sFmain_ul.on({
+      'touchstart mousedown': function(e) {
+        _this.setStartIndex(e);
+        _this.startSliding(e, _this.$sFmain_ul);
+      },
+      'touchmove mousemove': function(e) {
+        //TODO make slider-hander class
+        _this.handleMove(e, _this.$sFmain_ul, _this.leftMax, _this.leftStart);
+      },
+      'touchend mouseup mouseout': function() {
+        if (!_this.$sFmain_ul.touched) {
+          return;
+        }
+        _this.$sFmain_ul.touched = false;
 
-      $(window).bind("resize", function() {
-        // adjust thumbnail size
-        _this.adjustThumbWrapperSize();
-        _this.adjustThumbUlSize();
-      });
-    }
+        if (_this.$sFmain_ul.left < _this.leftBegin) {
+          _this.slideTo(_this.startIndex+1);
+
+        } else if (_this.leftBegin < _this.$sFmain_ul.left) {
+          // flick to right (want to show prev image)
+          _this.slideTo(_this.startIndex-1);
+        }
+      }
+    });
+  },
+
+  initThumbnailEvents: function() {
+    var _this = this;
+
+    $(window).load(function() {
+      _this.$thumb.removeClass('hidden');
+      _this.adjustThumbUlSize();
+    });
+
+    $(window).bind("resize", function() {
+      // adjust thumbnail size
+      _this.adjustThumbWrapperSize();
+      _this.adjustThumbUlSize();
+    });
+
+    _this.$thumb_al.click(function() {
+      _this.moveThumbTo('left');
+    });
+    _this.$thumb_ar.click(function() {
+      _this.moveThumbTo('right');
+    });
+
+    _this.$thumb_li.click(function() {
+      _this.slideTo(_this.$thumb_li.index(this)+1);
+    });
+
+    // start of thumbnail-slider
+    _this.$thumb_ul.on({
+      'touchstart mousedown': function(e) {
+        _this.startSliding(e, _this.$thumb_ul);
+      },
+      'touchmove mousemove': function(e) {
+        _this.handleMove(e, _this.$thumb_ul, _this.thumbLeftMax, 0);
+      },
+      'touchend mouseup mouseout': function() {
+        if (!_this.$thumb_ul.touched) {
+          return;
+        }
+        //TODO should fix pc-anchor tag link action
+        _this.$thumb_ul.touched = false;
+        // thumbnail slides only flick-distance
+      }
+    });
   }
 };
 
@@ -541,7 +590,7 @@ jQuery.fn.slidery = function(opts) {
   return this.each(function() {
     var slider = new Slidery(this, jQuery, opts);
 
-    slider.initLayout();
+//    slider.initLayout();
     slider.init();
   });
 };
