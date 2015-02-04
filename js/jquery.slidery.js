@@ -1,10 +1,31 @@
-//document.write('<div><h2>version 0.5.3</h2></div>');
-
 /**
  * slider for SmartDevices
  * Specs
  *    - always loop slide
  *    - not slide-show
+ *
+ * Sample implement code:
+ * $(function() {
+ *   // slidery preview image sample
+ *   setTimeout(function() {
+ *     var $lazyImages = $('.slider-wrapper img.lazy');
+ *     if ($lazyImages) {
+ *       $lazyImages.each(function() {
+ *         var $img = $(this);
+ *         var src = $img.attr('data-lazy');
+ *         $img.attr('src', src);
+ *       });
+ *     }
+ *
+ *     var $initPane = $('.slider-wrapper .init-pane');
+ *     if ($initPane) {
+ *       $initPane.addClass('hidden');
+ *       $('.slider-wrapper').css('height', 'auto');
+ *     }
+ *   }, 500);
+ *
+ *   $('#image-slider').slidery();
+ * });
  */
 
 
@@ -23,6 +44,8 @@ var Slidery = function(_target, $, opts) {
 
   this.flickBorder = 15;     // flick distance border
 };
+
+// declare consts
 jQuery.extend(Slidery, {
   _MAIN_PANE: '.main-pane',
   _SLIDER: '.slider',
