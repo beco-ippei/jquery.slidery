@@ -23,6 +23,13 @@ var Slidery = function(_target, $, opts) {
 
   this.flickBorder = 15;     // flick distance border
 };
+jQuery.extend(Slidery, {
+  _MAIN_PANE: '.main-pane',
+  _SLIDER: '.slider',
+  SLIDER_ITEM: 'slider-item',
+  UL: 'ul',
+  LI: 'li',
+});
 
 Slidery.prototype = {
   adjustSize: function(_height) {
@@ -109,22 +116,28 @@ Slidery.prototype = {
 
   initLayout: function() {
     this.$wrapper = $(this.target);
-    this.$mainPane = this.$wrapper.find(".main-pane");
-    this.$slider = this.$wrapper.find('.slider');
+    //this.$mainPane = this.$wrapper.find(".main-pane");
+    this.$mainPane = this.$wrapper.find(Slidery._MAIN_PANE);
+    //this.$slider = this.$wrapper.find('.slider');
+    this.$slider = this.$wrapper.find(Slidery._SLIDER);
 
     // adjust box-layout order
     this.$mainPane.append(this.$slider.remove());
 
     // append index-attr
     this.$slider.find('ul li').each(function(idx) {
-      $(this).attr('data-index', idx+1).addClass('slider-item');
+      //$(this).attr('data-index', idx+1).addClass('slider-item');
+      $(this).attr('data-index', idx+1).addClass(Slidery.SLIDER_ITEM);
     });
 
     // li-item copy to before-first / after-last, for loop slider
-    this.setSliderItemForLoop(this.$slider.find('ul'));
+    //this.setSliderItemForLoop(this.$slider.find('ul'));
+    this.setSliderItemForLoop(this.$slider.find(Slidery.UL));
 
-    this.$sFmain_ul = this.$slider.children('ul');
-    this.$sFmain_li = this.$sFmain_ul.children('li');
+    //this.$sFmain_ul = this.$slider.children('ul');
+    //this.$sFmain_li = this.$sFmain_ul.children('li');
+    this.$sFmain_ul = this.$slider.children(Slidery.UL);
+    this.$sFmain_li = this.$sFmain_ul.children(Slidery.LI);
 
     //_this.listCount = $sFmain_ul.children('li').length;
     this.listCount = this.$sFmain_li.length;
