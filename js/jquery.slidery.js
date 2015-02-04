@@ -137,6 +137,43 @@ Slidery.prototype = {
     this.initArrows();
   },
 
+  initThumbLayout: function() {
+    this.$thumb.addClass('hidden');
+
+    this.$thumb_list = this.$thumb.find('.thumb-list');
+    this.$thumb_al = this.$thumb.find('.arrow.left');
+    this.$thumb_ar = this.$thumb.find('.arrow.right');
+
+    this.thumbViewWidth = 0;
+    this.thumbWrapperHeight = this.thumbSize+10;
+
+    // adjust thumbnail panel size
+    this.adjustThumbWrapperSize();
+
+    var $thumb_ul = $('<ul></ul>');
+    this.$thumb_ul = $thumb_ul;
+    this.$thumb_list.append($thumb_ul);
+    this.$slider.find('li.slider-item img.thumb').each(function() {
+      var $_li = $('<li></li>').append($(this).remove());
+      $thumb_ul.append($_li);
+    });
+
+    $thumb_ul.find('li img')
+      .css({'max-width': this.thumbSize, 'max-height': this.thumbSize});
+
+    // remove first & last li-child, if loop-slider
+    $thumb_ul.find('li:first-child').remove();
+    $thumb_ul.find('li:last-child').remove();
+
+    //TODO should be "sub-class member-var for thumbnail"
+    this.$thumb_li = $thumb_ul.children('li');
+    this.thumbCount = this.$thumb_li.length;
+    this.thumbListMargin = 4;    // li { margin-right: 3px }
+
+    //TODO should get from $thumb_li's 'horizontal-margin' or left+right ?
+    this.thumbLeftMax = -400;      // set initial temporary value
+  },
+
   setSliderItemForLoop: function($slider_ul) {
     // li-item copy to before-first / after-last, for loop slider
     var $first_child = $slider_ul.find('li:first-child').clone(true);
@@ -267,33 +304,7 @@ Slidery.prototype = {
     var $thumb_list, $thumb_al, $thumb_ar;
 //    console.dir('$thumb == ' +$thumb);        //debug
     if (_this.$thumb) {
-      _this.$thumb.addClass('hidden');
-
-      _this.$thumb_list = _this.$thumb.find('.thumb-list');
-      _this.$thumb_al = _this.$thumb.find('.arrow.left');
-      _this.$thumb_ar = _this.$thumb.find('.arrow.right');
-
-      _this.thumbViewWidth = 0;
-      //var thumbWrapperHeight = _this.thumbSize+10;
-      _this.thumbWrapperHeight = _this.thumbSize+10;
-
-      // adjust thumbnail panel size
-      _this.adjustThumbWrapperSize();
-
-      var $thumb_ul = $('<ul></ul>');
-      _this.$thumb_ul = $thumb_ul;
-      _this.$thumb_list.append($thumb_ul);
-      _this.$slider.find('li.slider-item img.thumb').each(function() {
-        var $_li = $('<li></li>').append($(this).remove());
-        $thumb_ul.append($_li);
-      });
-
-      $thumb_ul.find('li img')
-        .css({'max-width': _this.thumbSize, 'max-height': _this.thumbSize});
-
-      // remove first & last li-child, if loop-slider
-      $thumb_ul.find('li:first-child').remove();
-      $thumb_ul.find('li:last-child').remove();
+      _this.initThumbLayout();
 
       _this.$thumb_al.click(function() {
         _this.moveThumbTo('left');
@@ -302,32 +313,24 @@ Slidery.prototype = {
         _this.moveThumbTo('right');
       });
 
-      //TODO should be "sub-class member-var for thumbnail"
-      _this.$thumb_li = $thumb_ul.children('li');
-      _this.thumbCount = _this.$thumb_li.length;
-      _this.thumbListMargin = 4;    // li { margin-right: 3px }
-
-      //TODO should get from $thumb_li's 'horizontal-margin' or left+right ?
-      _this.thumbLeftMax = -400;      // set initial temporary value
-
       _this.$thumb_li.click(function() {
         _this.slideTo(_this.$thumb_li.index(this)+1);
       });
 
       // start of thumbnail-slider
-      $thumb_ul.on({
+      _this.$thumb_ul.on({
         'touchstart mousedown': function(e) {
-          _this.startSliding(e, $thumb_ul);
+          _this.startSliding(e, _this.$thumb_ul);
         },
         'touchmove mousemove': function(e) {
-          _this.handleMove(e, $thumb_ul, _this.thumbLeftMax, 0);
+          _this.handleMove(e, _this.$thumb_ul, _this.thumbLeftMax, 0);
         },
         'touchend mouseup mouseout': function() {
-          if (!$thumb_ul.touched) {
+          if (!_this.$thumb_ul.touched) {
             return;
           }
           //TODO should fix pc-anchor tag link action
-          $thumb_ul.touched = false;
+          _this.$thumb_ul.touched = false;
           // thumbnail slides only flick-distance
         }
       });
