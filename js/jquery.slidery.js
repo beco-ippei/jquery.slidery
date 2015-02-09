@@ -248,29 +248,41 @@ Slidery.prototype = {
     this.$sFmain_ul.stop()
       .animate({left: leftPosition}, this.duration, this.easing, callback);
 
-    this.syncTbumbnail(this.currentIndex);
+    this.syncTbumbnail();
   },
 
-  syncTbumbnail: function(idx) {
+  currentThumb: function() {
+    return this.$thumb_ul.children('li:nth-child('+this.currentIndex+')');
+  },
+
+  //syncTbumbnail: function(idx) {
+  syncTbumbnail: function() {
     try {
       this.$thumb_ul.children('li.active').removeClass('active');
-      var $currentThumb = this.$thumb_ul.children('li:nth-child('+idx+')');
-      $currentThumb.addClass('active');
+      this.currentThumb().addClass('active');
 
-      var ul_start = Math.abs(parseInt(this.$thumb_ul.css('left')));
-      var ul_end   = ul_start + this.thumbViewWidth;
-      var li_left  = $currentThumb.position().left;
-      var li_right = li_left + $currentThumb.width();
-
-      if (li_left < ul_start) {
-        this.$thumb_ul.animate({left: -li_left});
-      } else if (ul_end < li_right) {
-        this.$thumb_ul.animate({left: -(li_right-this.thumbViewWidth+5)});
-        // 5 is border-width + li-margin
+      var leftPosition = this.thumbnailSlideLeftPosition();
+      if (leftPosition !== null) {
+        this.$thumb_ul.animate({left: leftPosition});
       }
     } catch (ex) {
       console.dir(ex);
     }
+  },
+
+  thumbnailSlideLeftPosition: function() {
+    var ul_start = Math.abs(parseInt(this.$thumb_ul.css('left')));
+    var ul_end   = ul_start + this.thumbViewWidth;
+    var $currentThumb = this.currentThumb();
+    var li_left  = $currentThumb.position().left;
+    var li_right = li_left + $currentThumb.width();
+
+    if (li_left < ul_start) {
+      return -li_left;
+    } else if (ul_end < li_right) {
+      return -(li_right-this.thumbViewWidth+5);
+    }
+    return null;
   },
 
   initArrows: function() {
