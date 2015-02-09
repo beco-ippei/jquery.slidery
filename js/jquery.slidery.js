@@ -298,69 +298,10 @@ Slidery.prototype = {
     //TODO on PC browser, "anchor" tag fired on mouseup-event.
     // maybe fix? move to "onclick", cancel event at "mousemove"
 
-    // slider for main-pane
-//    _this.$sFmain_ul.first__ = false;
-//    var isTouch = ('ontouchstart' in window);
-//    _this.$sFmain_ul.on({
-//      'touchstart mousedown': function(e) {
-//        _this.setStartIndex(e);
-//        _this.startSliding(e, _this.$sFmain_ul);
-//      },
-//      'touchmove mousemove': function(e) {
-//        //TODO make slider-hander class
-//        _this.handleMove(e, _this.$sFmain_ul, _this.leftMax, _this.leftStart);
-//      },
-//      'touchend mouseup mouseout': function() {
-//        if (!_this.$sFmain_ul.touched) {
-//          return;
-//        }
-//        _this.$sFmain_ul.touched = false;
-//
-//        if (_this.$sFmain_ul.left < _this.leftBegin) {
-//          _this.slideTo(_this.startIndex+1);
-//
-//        } else if (_this.leftBegin < _this.$sFmain_ul.left) {
-//          // flick to right (want to show prev image)
-//          _this.slideTo(_this.startIndex-1);
-//        }
-//      }
-//    });
-    // end of slider for main-pane
-
     // make thumbnail navigator
     _this.$thumb  = _this.$wrapper.find('.thumb-pane');
     if (_this.$thumb) {
       _this.initThumbLayout();
-
-//      _this.$thumb_al.click(function() {
-//        _this.moveThumbTo('left');
-//      });
-//      _this.$thumb_ar.click(function() {
-//        _this.moveThumbTo('right');
-//      });
-//
-//      _this.$thumb_li.click(function() {
-//        _this.slideTo(_this.$thumb_li.index(this)+1);
-//      });
-//
-//      // start of thumbnail-slider
-//      _this.$thumb_ul.on({
-//        'touchstart mousedown': function(e) {
-//          _this.startSliding(e, _this.$thumb_ul);
-//        },
-//        'touchmove mousemove': function(e) {
-//          _this.handleMove(e, _this.$thumb_ul, _this.thumbLeftMax, 0);
-//        },
-//        'touchend mouseup mouseout': function() {
-//          if (!_this.$thumb_ul.touched) {
-//            return;
-//          }
-//          //TODO should fix pc-anchor tag link action
-//          _this.$thumb_ul.touched = false;
-//          // thumbnail slides only flick-distance
-//        }
-//      });
-    // end of thumbnail-slider
     }
 
     _this.slideTo(1);     // slide to first element
